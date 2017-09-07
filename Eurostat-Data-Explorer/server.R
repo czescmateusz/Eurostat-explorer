@@ -59,6 +59,8 @@ shinyServer(function(input, output) {
   
   html <- paste0("<h3 style='font-family:Helvetica; text-align: center;'>", 'Population Dynamics', min(germany$time), "
                  -", max(germany$time, "</h3>"))
+  
+  result = 1+1
 
 # Build the chart with rcdimple
 
