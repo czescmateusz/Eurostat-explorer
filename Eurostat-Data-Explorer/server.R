@@ -16,13 +16,30 @@ library(shinydashboard)
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-  #
   output$tabEuroStat <- renderDataTable({ query_table <- search_eurostat(input$query, type = "table") })
   #Table with information on unemployment
   output$tabUnemployment<-renderDataTable({unemployment <- spread(get_eurostat('tepsr_wc170', time_format = "num"), geo, values)})
   
+  #KPI
+  #Population value box
+  output$populationbox <- renderValueBox({
+    valueBox(
+      100, "Population", icon = icon("list"),
+      color = "purple"
+    )
+  })
+  #GDP value box
+  output$gdpbox <- renderValueBox({
+    valueBox(
+      100, "GDP", icon = icon("list"),
+      color = "purple"
+    )
+  })
+  
+  
+  #Tabela z krajami + przekazywanie kodów do selekcji
   output$countries <-renderDataTable({eu_countries})
-    
+  #Wykres dynamiczny z piramidą populacji  
   output$chart <- renderDimple({demography <- get_eurostat('demo_pjangroup', time_format = "num")
   
   germany <- demography[ which(demography$geo=='DE' 
@@ -38,10 +55,7 @@ shinyServer(function(input, output) {
   germany <- select(germany, -unit)
   germany <- select(germany, -geo)
   germany <- select(germany, -age)
-  
-  
   germany <- germany %>% mutate(values = ifelse(sex == 'M', values*(-1), values*1))
-  
   
   # Format the table with dplyr and tidyr
   
@@ -51,7 +65,6 @@ shinyServer(function(input, output) {
   html <- paste0("<h3 style='font-family:Helvetica; text-align: center;'>", 'Population Dynamics', min(germany$time), "
                  -", max(germany$time, "</h3>"))
   
-
 # Build the chart with rcdimple
 
 chart <-germany %>%
