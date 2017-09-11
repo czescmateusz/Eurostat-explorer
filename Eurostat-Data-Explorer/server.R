@@ -20,6 +20,7 @@ shinyServer(function(input, output) {
   #Table with information on unemployment
   output$tabUnemployment<-renderDataTable({unemployment <- spread(get_eurostat('tepsr_wc170', time_format = "num"), geo, values)})
   
+<<<<<<< HEAD
   output$vbox1 <- renderValueBox({
     valueBox(
       subtitle="Box",
@@ -28,6 +29,8 @@ shinyServer(function(input, output) {
     )
   })
   
+=======
+>>>>>>> db0112a080dd288a8c92752ddd609e709a578784
   output$countries <-renderDataTable({eu_countries})
     
   output$chart <- renderDimple({demography <- get_eurostat('demo_pjangroup', time_format = "num")
