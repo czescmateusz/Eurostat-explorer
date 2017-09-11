@@ -3,16 +3,23 @@
 
 library(shiny)
 library(rcdimple)
+library(shinydashboard)
 
 # Define UI for application that draws a histogram
-shinyUI(navbarPage(
-  title = 'Eurostat Data Explorer',
-  tabPanel('Introduction'), helpText("This app lets the user explore Eurostats vast database"), imageOutput("logo"),
-  tabPanel('Demography'),  dimpleOutput('chart'), 
-  tabPanel('General Economic Overview'),
-  tabPanel('Industry'),
-  tabPanel('Unemployment'), tableOutput('tabUnemployment'),
-  tabPanel('Explore Eurostat database', textInput("query", "Search Eurostat Database", "Type in your query (ex. unemployment, GDP)"), 
-           dataTableOutput('tabEuroStat'))
-))
+shinyUI(fluidPage(theme="./www/bootstrap.css",
+  
+  titlePanel("Eurostat Data Explorer"),
+  
+  
+  navlistPanel(
+    "Header",
+    tabPanel("Introduction", dataTableOutput('countries')),
+    tabPanel("Demography",  dimpleOutput('chart')), 
+    tabPanel("General Economic Overview"), helpText("lorem ipsum"),
+    tabPanel('Industry',  valueBoxOutput("vbox1")),
+    tabPanel('Unemployment', dataTableOutput('tabUnemployment')),
+    tabPanel('Explore Eurostat database', textInput("query", "Search Eurostat Database", "Type in your query (ex. unemployment, GDP)"), 
+             dataTableOutput('tabEuroStat'))
+  )))
+
 
