@@ -2,10 +2,6 @@
 # This is the server logic of a Shiny web application. You can run the 
 # application by clicking 'Run App' above.
 #
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
 
 library(shiny)
 library(eurostat)
@@ -19,19 +15,13 @@ library(rcdimple)
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
+  #
   output$tabEuroStat <- renderDataTable({ query_table <- search_eurostat(input$query, type = "table") })
+  #Table with information on unemployment
   output$tabUnemployment<-renderDataTable({unemployment <- spread(get_eurostat('tepsr_wc170', time_format = "num"), geo, values)})
   
-  output$logo <- renderImage({
-    # When input$n is 1, filename is ./images/image1.jpeg
-    logo <- normalizePath(file.path('./',
-                                        paste('logo-eurostat', input$n, '.jpg', sep='')))
+  output$countries <-renderDataTable({eu_countries})
     
-    # Return a list containing the filename
-    list(src = filename)
-  }, deleteFile = FALSE)
-  
-  
   output$chart <- renderDimple({demography <- get_eurostat('demo_pjangroup', time_format = "num")
   
   germany <- demography[ which(demography$geo=='DE' 
@@ -60,7 +50,6 @@ shinyServer(function(input, output) {
   html <- paste0("<h3 style='font-family:Helvetica; text-align: center;'>", 'Population Dynamics', min(germany$time), "
                  -", max(germany$time, "</h3>"))
   
-  result = 1+1
 
 # Build the chart with rcdimple
 
