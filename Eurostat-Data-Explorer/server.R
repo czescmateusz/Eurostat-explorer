@@ -22,20 +22,12 @@ shinyServer(function(input, output) {
   #Tablica z kodami i krajami
   countries <-  eu_countries
   countries$codename <- paste0(countries$name, " (", countries$code, ")")
-  #Population indicator
-  
-  
-  population <- reactive({
-    if (input$country==""){
-      population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = "EU28")))
-    } else label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2))))
-    as.numeric(population[which(population$time==as.character(max(population$time))), ]$values)
-  })
-  
   
   #KPI - economic indicators on the Introduction page
   #Population value box
   output$populationbox <- renderValueBox({
+    population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2))))
+    population <-population[population[, "time"]==as.character(max(population$time)), ]$values
     valueBox(
       population, "Population", icon = icon("group"),
       color = "purple"
@@ -46,12 +38,18 @@ shinyServer(function(input, output) {
   #GDP value box
   output$gdpbox <- renderValueBox({
     valueBox(
-      100, "GDP", icon = icon("list"),
+      100, "GDP", icon = icon("money"),
       color = "purple"
     )
   })
   
-  
+  #Unemployment
+  output$unemploymentbox <- renderValueBox({
+    valueBox(
+      '10%', "Unemployment rate", icon = icon("cogs"),
+      color = "purple"
+    )
+  })
   
 
   

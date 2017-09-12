@@ -4,6 +4,9 @@ library(knitr)
 
 tabela <- as.table(paste0(eu_countries$name))
 
+population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2))))
+
+
 print(tabela)
 
 #https://www.r-bloggers.com/pre-cran-waffle-update-isotype-pictograms/

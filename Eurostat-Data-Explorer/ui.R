@@ -12,20 +12,20 @@ library(shinydashboard)
 shinyUI(dashboardPage(#theme="bootstrap.css",
   dashboardHeader(title = "Eurostat Indicators"),
   dashboardSidebar(sidebarMenuOutput("menu"), menuItem("Introduction", tabName = "introduction", icon = icon("dashboard")), menuItem("Demography"), 
-                   menuItem("General Economic Overview"), menuItem("Industry"),
-                   menuItem("General Economic Overview"), menuItem("Unemployment"),
+                   menuItem("General Economic Overview"), menuItem("Industry", tabName = "industry"), menuItem("Unemployment"),
                    menuItem("Explore"), menuItem("About me"), menuItem("Credits")
   ),
   dashboardBody(tabItems(
     tabItem(tabName = "introduction",
-            valueBoxOutput("populationbox"),   selectInput("country", "Choose a country:", countries$name
-                                                           )))
-    )
-  ))
+            valueBoxOutput("populationbox"), valueBoxOutput('gdpbox'),valueBoxOutput('unemploymentbox'),selectInput("country", "Choose a country:", countries$codename
+                                                           ))))
+    ))
 
-#inflation
-#Unemployment
-#government debt
-#industrial production
-#time
+#inflation: credit-card
+#government debt: euro
+#government deficit: warning
+#industrial production: bar-chart
+#minimum wage compass
+#imigration: line-chart
+#time: clock-o
 
