@@ -1,7 +1,6 @@
 #
 # This is the server logic of a Shiny web application. You can run the 
-# application by clicking 'Run App' above.
-#
+
 
 library(shiny)
 library(eurostat)
@@ -20,14 +19,30 @@ shinyServer(function(input, output) {
   #Table with information on unemployment
   output$tabUnemployment<-renderDataTable({unemployment <- spread(get_eurostat('tepsr_wc170', time_format = "num"), geo, values)})
   
-  #KPI
+  #Tablica z kodami i krajami
+  countries <-  eu_countries
+  countries$codename <- paste0(countries$name, " (", countries$code, ")")
+  #Population indicator
+  
+  
+  population <- reactive({
+    if (input$country==""){
+      population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = "EU28")))
+    } else label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2))))
+    as.numeric(population[which(population$time==as.character(max(population$time))), ]$values)
+  })
+  
+  
+  #KPI - economic indicators on the Introduction page
   #Population value box
   output$populationbox <- renderValueBox({
     valueBox(
-      100, "Population", icon = icon("list"),
+      population, "Population", icon = icon("group"),
       color = "purple"
     )
   })
+  
+  
   #GDP value box
   output$gdpbox <- renderValueBox({
     valueBox(
@@ -37,8 +52,11 @@ shinyServer(function(input, output) {
   })
   
   
-  #Tabela z krajami + przekazywanie kodów do selekcji
-  output$countries <-renderDataTable({eu_countries})
+  
+
+  
+  
+  #Fancy animated chart
   #Wykres dynamiczny z piramidą populacji  
   output$chart <- renderDimple({demography <- get_eurostat('demo_pjangroup', time_format = "num")
   

@@ -17,22 +17,22 @@ print(tabela)
 #Valuebox - works only with dashboad layout?
 #change fluidpage to dashboard layout
 
-library(shiny)
-library(rcdimple)
-library(shinydashboard)
+population <- get_eurostat("tps00001")
 
-# Define UI for application that draws a histogram
-shinyUI(fluidPage(theme="bootstrap.css",
-                  titlePanel("Eurostat Data Explorer"),
-                  navlistPanel(
-                    "Header",
-                    tabPanel("Introduction", valueBoxOutput("populationbox"), valueBoxOutput("gdpbox")),
-                    tabPanel("Demography",  dimpleOutput('chart')), 
-                    tabPanel("General Economic Overview"),
-                    tabPanel('Industry'),
-                    tabPanel("General Economic Overview"),
-                    tabPanel('Unemployment', dataTableOutput('tabUnemployment')),
-                    tabPanel('Explore Eurostat database', textInput("query", "Search Eurostat Database", "Type in your query (ex. unemployment, GDP)"), 
-                             dataTableOutput('tabEuroStat'))
-                  )))
+population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = "EU28")))
+population[population[, "time"]==as.character(max(population$time)), ]
 
+countries <-  eu_countries
+countries$codename <- paste0(countries$name, " (", countries$code, ")")
+
+newdata <- mydata[ which(mydata$gender=='F' 
+                         & mydata$age > 65), ]
+
+
+
+
+library(stringr)
+
+str_sub(countries$codename,-3,-2)
+
+input$country
