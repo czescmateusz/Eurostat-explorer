@@ -3,6 +3,7 @@
 
 
 library(shiny)
+library(stringr)
 library(eurostat)
 library(DT)
 library(ggplot2)
@@ -19,17 +20,14 @@ shinyServer(function(input, output) {
   #Table with information on unemployment
   output$tabUnemployment<-renderDataTable({unemployment <- spread(get_eurostat('tepsr_wc170', time_format = "num"), geo, values)})
   
-  #Tablica z kodami i krajami
-  countries <-  eu_countries
-  countries$codename <- paste0(countries$name, " (", countries$code, ")")
-  
   #KPI - economic indicators on the Introduction page
   #Population value box
   output$populationbox <- renderValueBox({
     population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2))))
-    population <-population[population[, "time"]==as.character(max(population$time)), ]$values
+    popyear <- as.character(max(population$time))
+    population <- population[population[, "time"]==popyear, ]$values
     valueBox(
-      population, "Population", icon = icon("group"),
+      population, paste0("Population in :", popyear), icon = icon("group"),
       color = "purple"
     )
   })
@@ -37,21 +35,88 @@ shinyServer(function(input, output) {
   
   #GDP value box
   output$gdpbox <- renderValueBox({
+    gdp <- label_eurostat(get_eurostat("nama_aux_gph",  filters = list(geo = str_sub(input$country,-3,-2), unit="EUR_HAB", indic_na="RGDPH")))
+    gdpyear <- as.character(max(gdp$time))
+    gdp <-gdp[gdp[, "time"]==as.character(max(gdp$time)), ]$values
     valueBox(
-      100, "GDP", icon = icon("money"),
+      gdp, paste0("Population in :", gdpyear), icon = icon("money"),
       color = "purple"
     )
   })
   
   #Unemployment
   output$unemploymentbox <- renderValueBox({
+    unemployment <- label_eurostat(get_eurostat("tipsun20",  filters = list(geo = str_sub(input$country,-3,-2), age="TOTAL", sex="T")))
+    unemployment <-unemployment[unemployment[, "time"]==as.character(max(unemployment$time)), ]$values
     valueBox(
-      '10%', "Unemployment rate", icon = icon("cogs"),
+      unemployment, "Unemployment rate", icon = icon("cogs"),
       color = "purple"
     )
   })
   
+  #Inflation
+  output$inflationbox <- renderValueBox({
+    inflation <- label_eurostat(get_eurostat("tec00118",  filters = list(geo = str_sub(input$country,-3,-2))))
+    inflation <-inflation[population[, "time"]==as.character(max(inflation$time)), ]$values
+    valueBox(
+      inflation, "Inflation rate", icon = icon("credit-card"),
+      color = "purple"
+    )
+  })
+  
+  
+  #Government debt
+  output$govdebtbox <- renderValueBox({
+    valueBox(
+      '10%', "Government debt", icon = icon("euro"),
+      color = "purple"
+    )
+  })
+  
+  
+  #Government deficit
+  output$govdeficitbox <- renderValueBox({
+    valueBox(
+      '10%', "Government deficit", icon = icon("warning"),
+      color = "purple"
+    )
+  })
+  
+  #Industrial production
+  output$induprodbox <- renderValueBox({
+    valueBox(
+      '10%', "Industrial production", icon = icon("bar-chart"),
+      color = "purple"
+    )
+  })
+  
+  #Minimum wage
+  output$minwagebox <- renderValueBox({
+    valueBox(
+      '10%', "Minimum wage" , icon = icon("compass"),
+      color = "purple"
+    )
+  })
+  
+  #Imigration
+  output$imigrationbox <- renderValueBox({
+    valueBox(
+      '10%', "Imigration" , icon = icon("line-chart"),
+      color = "purple"
+    )
+  })
+  
+  
+  #Flagi
+  
+  output$flag <- renderImage({
+    return(list(src = "flags/Belgium.svg.png",
+      contentType = "image/png", deleteFile = FALSE
+    ))
+  })
 
+  
+  
   
   
   #Fancy animated chart

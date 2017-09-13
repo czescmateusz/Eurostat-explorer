@@ -20,7 +20,12 @@ print(tabela)
 #Valuebox - works only with dashboad layout?
 #change fluidpage to dashboard layout
 
-population <- get_eurostat("tps00001")
+gdp <- get_eurostat("nama_aux_gph", filters = list(geo = "UK"))
+indic_na=RGDPH
+
+unemployment <- label_eurostat(get_eurostat("tipsun20",  filters = list(geo = "UK", age="TOTAL", sex="T")))
+
+population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = "EU28")))
 
 population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = "EU28")))
 population[population[, "time"]==as.character(max(population$time)), ]
