@@ -3,8 +3,8 @@ title: Eurostat-Data-Explorer
 account: mpawlowski
 server: shinyapps.io
 appId: 205856
-bundleId: 979930
+bundleId: 981189
 url: https://mpawlowski.shinyapps.io/Eurostat-Data-Explorer/
-when: 1505309273.19881
+when: 1505373142.98564
 asMultiple: FALSE
 asStatic: FALSE

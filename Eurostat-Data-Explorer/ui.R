@@ -17,7 +17,7 @@ countries$codename <- paste0(countries$name, " (", countries$code, ")")
 shinyUI(dashboardPage(#theme="bootstrap.css",
   dashboardHeader(title = "Eurostat Indicators"),
   dashboardSidebar(sidebarMenuOutput("menu"), menuItem("Introduction", tabName = "introduction", icon = icon("dashboard")), 
-                   menuItem("Demography", tabName = 'Demography'), menuItem("General Economic Overview"), 
+                   menuItem("Demography", tabName = "demography",  icon = icon("th")), menuItem("General Economic Overview", tabName = 'general economic overview'), 
                    menuItem("Industry", tabName = "industry"), menuItem("Unemployment"), 
                    menuItem("Explore"), menuItem("About me"), menuItem("Credits")
   ),
@@ -26,8 +26,10 @@ shinyUI(dashboardPage(#theme="bootstrap.css",
             valueBoxOutput("populationbox"), valueBoxOutput('gdpbox'),valueBoxOutput('unemploymentbox'),
             valueBoxOutput('inflationbox'), valueBoxOutput('govdebtbox'), valueBoxOutput('govdeficitbox'),
             valueBoxOutput('induprodbox'), valueBoxOutput('minwagebox'), valueBoxOutput('imigrationbox'),
-            selectInput("country", "Choose a country:", countries$codename), imageOutput("flag")))),
-   tabItem(tabName = "Demography", dimpleOutput('chart'))
+            selectInput("country", "Choose a country:", countries$codename), 
+            dimpleOutput('chart'),
+            imageOutput("flag")))),
+   tabItem(tabName = "demography", valueBoxOutput('gdpbox'))
     ))
 
 

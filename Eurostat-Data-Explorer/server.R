@@ -39,7 +39,7 @@ shinyServer(function(input, output) {
     gdpyear <- as.character(max(gdp$time))
     gdp <-gdp[gdp[, "time"]==as.character(max(gdp$time)), ]$values
     valueBox(
-      gdp, paste0("Population in :", gdpyear), icon = icon("money"),
+      gdp, paste0("GDP in :", gdpyear), icon = icon("money"),
       color = "purple"
     )
   })
@@ -59,7 +59,7 @@ shinyServer(function(input, output) {
     inflation <- label_eurostat(get_eurostat("tec00118",  filters = list(geo = str_sub(input$country,-3,-2))))
     inflation <-inflation[population[, "time"]==as.character(max(inflation$time)), ]$values
     valueBox(
-      inflation, "Inflation rate", icon = icon("credit-card"),
+      inflation, "Inflation rate", icon = icon("euro"),
       color = "purple"
     )
   })
