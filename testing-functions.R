@@ -36,11 +36,15 @@ countries$codename <- paste0(countries$name, " (", countries$code, ")")
 newdata <- mydata[ which(mydata$gender=='F' 
                          & mydata$age > 65), ]
 
+#GDP forecasting
 
+gdp <- get_eurostat("namq_10_gdp", filters = list(geo="UK", na_item="B1GQ", unit="CP_MEUR", s_adj="NSA"))
 
+library(forecast)
 
-library(stringr)
+gdptimeseries <- ts(gdp$values, frequency=4, start=c(1975,4))
 
-str_sub(countries$codename,-3,-2)
-
-input$country
+gdpforecasts <- HoltWinters(gdptimeseries, beta=FALSE, gamma=FALSE)
+plot(gdpforecasts)
+gdpforecasts2 <- forecast.HoltWinters(rainseriesforecasts, h=8)
+plot.forecast(gdpforecasts2)

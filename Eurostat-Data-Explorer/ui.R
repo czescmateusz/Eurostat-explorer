@@ -4,6 +4,7 @@
 #icons: http://fontawesome.io/icons/
 #icons: https://getbootstrap.com/docs/3.3/components/
 
+rm(list=ls())
 library(shiny)
 library(rcdimple)
 library(shinydashboard)
