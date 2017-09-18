@@ -26,11 +26,10 @@ shinyUI(dashboardPage(#theme="bootstrap.css",
     tabItem(tabName = "introduction",
             valueBoxOutput("populationbox"), valueBoxOutput('gdpbox'),valueBoxOutput('unemploymentbox'),
             valueBoxOutput('inflationbox'), valueBoxOutput('govdebtbox'), valueBoxOutput('govdeficitbox'),
-            valueBoxOutput('induprodbox'), valueBoxOutput('minwagebox'), valueBoxOutput('imigrationbox'),
+            valueBoxOutput('sentimentbox'), valueBoxOutput('labourcostbox'), valueBoxOutput('imigrationbox'),
             selectInput("country", "Choose a country:", countries$codename), 
-            dimpleOutput('chart'),
-            imageOutput("flag")))),
-   tabItem(tabName = "demography", valueBoxOutput('gdpbox'))
+            imageOutput("flag", width = "50%", height = "200px")))),
+   tabItem(tabname = "demography", dimpleOutput('chart'))
     ))
 
 

@@ -57,7 +57,7 @@ shinyServer(function(input, output) {
   #Inflation
   output$inflationbox <- renderValueBox({
     inflation <- label_eurostat(get_eurostat("tec00118",  filters = list(geo = str_sub(input$country,-3,-2))))
-    inflation <-inflation[population[, "time"]==as.character(max(inflation$time)), ]$values
+    inflation <-inflation[inflation[, "time"]==as.character(max(inflation$time)), ]$values
     valueBox(
       inflation, "Inflation rate", icon = icon("euro"),
       color = "purple"
@@ -67,8 +67,12 @@ shinyServer(function(input, output) {
   
   #Government debt
   output$govdebtbox <- renderValueBox({
+    
+    debt <- get_eurostat("gov_10dd_edpt1", filters=list(geo= str_sub(input$country,-3,-2),unit="PC_GDP", sector="S13", na_item="GD"))
+    debt <- debt[debt[, "time"]==as.character(max(debt$time)), ]$values
+    
     valueBox(
-      '10%', "Government debt", icon = icon("euro"),
+      debt, "Government debt", icon = icon("euro"),
       color = "purple"
     )
   })
@@ -76,32 +80,46 @@ shinyServer(function(input, output) {
   
   #Government deficit
   output$govdeficitbox <- renderValueBox({
+    
+    deficit <- get_eurostat("gov_10dd_edpt1", filters=list(geo= str_sub(input$country,-3,-2),unit="PC_GDP", sector="S13", na_item="B9"))
+    deficit <- deficit[deficit[, "time"]==as.character(max(deficit$time)), ]$values
+    
     valueBox(
-      '10%', "Government deficit", icon = icon("warning"),
+      deficit, "Government deficit", icon = icon("warning"),
       color = "purple"
     )
   })
   
-  #Industrial production
-  output$induprodbox <- renderValueBox({
+  #Sentiment
+  output$sentimentbox <- renderValueBox({
+    sentiment <- get_eurostat("teibs010", filters=list(geo= str_sub(input$country,-3,-2)))
+    sentiment <- sentiment[sentiment[, "time"]==as.character(max(sentiment$time)), ]$values
     valueBox(
-      '10%', "Industrial production", icon = icon("bar-chart"),
+      sentiment, "Economic sentiment indicator", icon = icon("bar-chart"),
       color = "purple"
     )
   })
   
-  #Minimum wage
-  output$minwagebox <- renderValueBox({
+  #Labour costs
+  output$labourcostbox <- renderValueBox({
+    
+    labour_costs <- get_eurostat("tps00173", filters = list(geo=str_sub(input$country,-3,-2), lcstruct="D"))
+    labour_costs <- labour_costs[labour_costs[, "time"]==as.character(max(labour_costs$time)), ]$values
+    
     valueBox(
-      '10%', "Minimum wage" , icon = icon("compass"),
+      labour_costs, "Labour costs" , icon = icon("compass"),
       color = "purple"
     )
   })
   
   #Imigration
   output$imigrationbox <- renderValueBox({
+    
+    immigration <- get_eurostat("tps00176", filters = list(geo=str_sub(input$country,-3,-2), agedef="COMPLET"))
+    immigration <- immigration[immigration[, "time"]==as.character(max(immigration$time)), ]$values
+    
     valueBox(
-      '10%', "Imigration" , icon = icon("line-chart"),
+      immigration, "Imigration" , icon = icon("line-chart"),
       color = "purple"
     )
   })
@@ -110,14 +128,11 @@ shinyServer(function(input, output) {
   #Flagi
   
   output$flag <- renderImage({
-    return(list(src = "flags/Belgium.svg.png",
+    return(list(src = "flags/Bosnia.svg.png",
       contentType = "image/png", deleteFile = FALSE
     ))
   })
 
-  
-  
-  
   
   #Fancy animated chart
   #Wykres dynamiczny z piramidą populacji  

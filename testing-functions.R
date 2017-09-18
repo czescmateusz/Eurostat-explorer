@@ -20,7 +20,10 @@ print(tabela)
 #Valuebox - works only with dashboad layout?
 #change fluidpage to dashboard layout
 
-gdp <- get_eurostat("nama_aux_gph", filters = list(geo = "UK"))
+immigration <- get_eurostat("tps00176", filters = list(agedef="COMPLET"))
+
+
+
 indic_na=RGDPH
 
 unemployment <- label_eurostat(get_eurostat("tipsun20",  filters = list(geo = "UK", age="TOTAL", sex="T")))
