@@ -23,9 +23,6 @@ print(tabela)
 immigration <- get_eurostat("tps00176", filters = list(agedef="COMPLET"))
 
 
-
-indic_na=RGDPH
-
 unemployment <- label_eurostat(get_eurostat("tipsun20",  filters = list(geo = "UK", age="TOTAL", sex="T")))
 
 population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = "EU28")))
@@ -46,8 +43,29 @@ gdp <- get_eurostat("namq_10_gdp", filters = list(geo="UK", na_item="B1GQ", unit
 library(forecast)
 
 gdptimeseries <- ts(gdp$values, frequency=4, start=c(1975,4))
+gdp.learn <- window(gdptimeseries, end = c(2010,1))
+gdp.test <- window(gdptimeseries, start = c(2010,2))
+#autoarima
+gdp.autoarima <- auto.arima(gdp.learn)
+summary(gdp.autoarima)
+#decomposition
+gdp.tslm <- tslm(gdp.learn ~ trend + season)
+summary(model.tslm)
+Acf(residuals(model.tslm))
+Box.test(residuals(model.tslm), type="Ljung-Box", lag=20)
+#
+
+tsdiag(gdp.autoarima)
 
 gdpforecasts <- HoltWinters(gdptimeseries, beta=FALSE, gamma=FALSE)
 plot(gdpforecasts)
 gdpforecasts2 <- forecast.HoltWinters(rainseriesforecasts, h=8)
 plot.forecast(gdpforecasts2)
+
+
+
+dygraph(rdfRawData(), main = "Raw Time-Series Plot") %>%
+  dySeries(attr(rdfRawData,"dimnames")[1]) %>%
+  dyLegend(show = "never") %>%
+  dyAxis(name="y", label=getChartLabel()) %>%
+  dyOptions(drawGrid = TRUE, colors = "black",strokeWidth = 0.2, strokePattern = "dashed", fillAlpha = .25)

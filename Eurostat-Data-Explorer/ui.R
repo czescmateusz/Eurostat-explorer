@@ -17,11 +17,11 @@ countries$codename <- paste0(countries$name, " (", countries$code, ")")
 # Define UI for application that draws a histogram
 shinyUI(dashboardPage(#theme="bootstrap.css",
   dashboardHeader(title = "Eurostat Indicators"),
-  dashboardSidebar(sidebarMenuOutput("menu"), menuItem("Introduction", tabName = "introduction", icon = icon("dashboard")), 
+  dashboardSidebar(id="sidebarmenu", sidebarMenu(menuItem("Introduction", tabName = "introduction", icon = icon("dashboard")), 
                    menuItem("Demography", tabName = "demography",  icon = icon("th")), menuItem("General Economic Overview", tabName = 'general economic overview'), 
                    menuItem("Industry", tabName = "industry"), menuItem("Unemployment"), 
                    menuItem("Explore"), menuItem("About me"), menuItem("Credits")
-  ),
+  )),
   dashboardBody(tabItems(
     tabItem(tabName = "introduction",
             valueBoxOutput("populationbox"), valueBoxOutput('gdpbox'),valueBoxOutput('unemploymentbox'),
@@ -29,7 +29,7 @@ shinyUI(dashboardPage(#theme="bootstrap.css",
             valueBoxOutput('sentimentbox'), valueBoxOutput('labourcostbox'), valueBoxOutput('imigrationbox'),
             selectInput("country", "Choose a country:", countries$codename), 
             imageOutput("flag", width = "50%", height = "200px")))),
-   tabItem(tabname = "demography", dimpleOutput('chart'))
+   tabItem(tabname = "demography", dimpleOutput('chart'), valueBoxOutput('gdpbox'))
     ))
 
 
