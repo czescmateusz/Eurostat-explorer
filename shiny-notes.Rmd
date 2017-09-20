@@ -27,18 +27,12 @@ summary(gdp.tslm)
 Acf(residuals(gdp.tslm))
 Box.test(residuals(gdp.tslm), type="Ljung-Box", lag=20)
 #exponential smoothing model
-
 model.ets <- ets (gdp.learn)
 summary(model.ets)
-
 tsdiag(model.ets)
-
 horyzont <- length(gdp.test)
-
 #seasonal naive forecast
-
 snaive.forecast <- snaive (gdp.learn, h=horyzont)
-
 # auto arima forecast
 arima1.forecast <- forecast(gdp.autoarima, h=horyzont)
 

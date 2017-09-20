@@ -25,7 +25,7 @@ shinyServer(function(input, output) {
   output$populationbox <- renderValueBox({
     population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2))))
     popyear <- as.character(max(population$time))
-    population <- population[population[, "time"]==popyear, ]$values
+    population <- paste0((population[population[, "time"]==popyear, ]$values/1000000), "mln")
     valueBox(
       population, paste0("Population in :", popyear), icon = icon("group"),
       color = "purple"
@@ -47,7 +47,7 @@ shinyServer(function(input, output) {
   #Unemployment
   output$unemploymentbox <- renderValueBox({
     unemployment <- label_eurostat(get_eurostat("tipsun20",  filters = list(geo = str_sub(input$country,-3,-2), age="TOTAL", sex="T")))
-    unemployment <-unemployment[unemployment[, "time"]==as.character(max(unemployment$time)), ]$values
+    unemployment <- unemployment[unemployment[, "time"]==as.character(max(unemployment$time)), ]$values
     valueBox(
       unemployment, "Unemployment rate", icon = icon("cogs"),
       color = "purple"
