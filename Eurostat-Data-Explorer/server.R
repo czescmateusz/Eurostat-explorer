@@ -18,8 +18,7 @@ library(shinydashboard)
 shinyServer(function(input, output) {
   output$tabEuroStat <- renderDataTable({ query_table <- search_eurostat(input$query, type = "table") })
   #Table with information on unemployment
-  output$tabUnemployment<-renderDataTable({unemployment <- spread(get_eurostat('tepsr_wc170', time_format = "num"), geo, values)})
-  
+
   #KPI - economic indicators on the Introduction page
   #Population value box
   output$populationbox <- renderValueBox({
@@ -27,7 +26,7 @@ shinyServer(function(input, output) {
     popyear <- as.character(max(population$time))
     population <- paste0((population[population[, "time"]==popyear, ]$values/1000000), "mln")
     valueBox(
-      population, paste0("Population in :", popyear), icon = icon("group"),
+      population, paste0("Population in: ", popyear), icon = icon("group"),
       color = "purple"
     )
   })
@@ -47,9 +46,10 @@ shinyServer(function(input, output) {
   #Unemployment
   output$unemploymentbox <- renderValueBox({
     unemployment <- label_eurostat(get_eurostat("tipsun20",  filters = list(geo = str_sub(input$country,-3,-2), age="TOTAL", sex="T")))
+    unempyear <- as.character(max(unemployment$time))
     unemployment <- unemployment[unemployment[, "time"]==as.character(max(unemployment$time)), ]$values
     valueBox(
-      unemployment, "Unemployment rate", icon = icon("cogs"),
+      unemployment, paste0("Unemployment rate in: ", unempyear), icon = icon("cogs"),
       color = "purple"
     )
   })
@@ -57,9 +57,10 @@ shinyServer(function(input, output) {
   #Inflation
   output$inflationbox <- renderValueBox({
     inflation <- label_eurostat(get_eurostat("tec00118",  filters = list(geo = str_sub(input$country,-3,-2))))
+    inflatyear <- as.character(max(inflation$time))
     inflation <-inflation[inflation[, "time"]==as.character(max(inflation$time)), ]$values
     valueBox(
-      inflation, "Inflation rate", icon = icon("euro"),
+      inflation, paste0("Inflation rate in: ", inflatyear), icon = icon("euro"),
       color = "purple"
     )
   })
@@ -69,10 +70,11 @@ shinyServer(function(input, output) {
   output$govdebtbox <- renderValueBox({
     
     debt <- get_eurostat("gov_10dd_edpt1", filters=list(geo= str_sub(input$country,-3,-2),unit="PC_GDP", sector="S13", na_item="GD"))
+    debtyear <- as.character(max(debt$time))
     debt <- debt[debt[, "time"]==as.character(max(debt$time)), ]$values
-    
+  
     valueBox(
-      debt, "Government debt", icon = icon("euro"),
+      debt, paste0("Government debt in: ", debtyear), icon = icon("euro"),
       color = "purple"
     )
   })
@@ -82,10 +84,11 @@ shinyServer(function(input, output) {
   output$govdeficitbox <- renderValueBox({
     
     deficit <- get_eurostat("gov_10dd_edpt1", filters=list(geo= str_sub(input$country,-3,-2),unit="PC_GDP", sector="S13", na_item="B9"))
+    deficityear <- as.character(max(deficit$time))
     deficit <- deficit[deficit[, "time"]==as.character(max(deficit$time)), ]$values
     
     valueBox(
-      deficit, "Government deficit", icon = icon("warning"),
+      deficit, paste0("Government deficit in: ", deficityear), icon = icon("warning"),
       color = "purple"
     )
   })
@@ -93,9 +96,10 @@ shinyServer(function(input, output) {
   #Sentiment
   output$sentimentbox <- renderValueBox({
     sentiment <- get_eurostat("teibs010", filters=list(geo= str_sub(input$country,-3,-2)))
+    sentiyear <- as.character(max(sentiment$time))
     sentiment <- sentiment[sentiment[, "time"]==as.character(max(sentiment$time)), ]$values
     valueBox(
-      sentiment, "Economic sentiment indicator", icon = icon("bar-chart"),
+      sentiment, paste0("Economic sentiment indicator in: ", sentiyear), icon = icon("bar-chart"),
       color = "purple"
     )
   })
@@ -104,10 +108,11 @@ shinyServer(function(input, output) {
   output$labourcostbox <- renderValueBox({
     
     labour_costs <- get_eurostat("tps00173", filters = list(geo=str_sub(input$country,-3,-2), lcstruct="D"))
+    labour_year <-  as.character(max(labour_costs$time))
     labour_costs <- labour_costs[labour_costs[, "time"]==as.character(max(labour_costs$time)), ]$values
     
     valueBox(
-      labour_costs, "Labour costs" , icon = icon("compass"),
+      labour_costs, paste0("Labour costs in: ", labour_year),  icon = icon("compass"),
       color = "purple"
     )
   })
@@ -116,10 +121,11 @@ shinyServer(function(input, output) {
   output$imigrationbox <- renderValueBox({
     
     immigration <- get_eurostat("tps00176", filters = list(geo=str_sub(input$country,-3,-2), agedef="COMPLET"))
+    immigrationyr <- as.character(max(immigration$time))
     immigration <- immigration[immigration[, "time"]==as.character(max(immigration$time)), ]$values
     
     valueBox(
-      immigration, "Imigration" , icon = icon("line-chart"),
+      immigration, paste0("Imigration in: ", immigrationyr),  icon = icon("line-chart"),
       color = "purple"
     )
   })
