@@ -1,0 +1,64 @@
+---
+title: "Shiny notes"
+author: "Mateusz Pawłowski"
+date: "19 września 2017"
+output: html_document
+---
+
+#Forecasting functions
+
+```{r}
+library(eurostat)
+library(forecast)
+
+#GDP forecasting
+
+gdp <- get_eurostat("namq_10_gdp", filters = list(geo="UK", na_item="B1GQ", unit="CP_MEUR", s_adj="NSA"))
+
+gdptimeseries <- ts(gdp$values, frequency=4, start=c(1975,4))
+gdp.learn <- window(gdptimeseries, end = c(2010,1))
+gdp.test <- window(gdptimeseries, start = c(2010,2))
+#autoarima
+gdp.autoarima <- auto.arima(gdp.learn)
+summary(gdp.autoarima)
+#decomposition
+gdp.tslm <- tslm(gdp.learn ~ trend + season)
+summary(gdp.tslm)
+Acf(residuals(gdp.tslm))
+Box.test(residuals(gdp.tslm), type="Ljung-Box", lag=20)
+#exponential smoothing model
+model.ets <- ets (gdp.learn)
+summary(model.ets)
+tsdiag(model.ets)
+horyzont <- length(gdp.test)
+#seasonal naive forecast
+snaive.forecast <- snaive (gdp.learn, h=horyzont)
+# auto arima forecast
+arima1.forecast <- forecast(gdp.autoarima, h=horyzont)
+
+# tslm forecast
+tslm.forecast <- forecast(gdp.tslm, h=horyzont)
+
+# ets forecast
+
+ets.forecast <- forecast(model.ets, h=horyzont)
+
+#wykresy
+par(mfrow = c (2,2))
+plot(snaive.forecast)
+lines(gdp.test, col="red", lty=2)
+
+legend("topleft", legend=c("real", "forecast"), lty=c(2,1), col=c("red", "blue"))
+grid()
+plot(arima1.forecast)
+lines(gdp.test, col="red", lty=2)
+grid()
+plot(tslm.forecast)
+lines(gdp.test, col="red", lty=2)
+grid()
+plot(ets.forecast)
+lines(gdp.test, col="red", lty=2)
+grid()
+
+```
+

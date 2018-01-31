@@ -1,13 +1,8 @@
-#
-# This is the server logic of a Shiny web application. You can run the 
-# application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
+# This is the server logic of a Shiny web application.
+
 
 library(shiny)
+library(stringr)
 library(eurostat)
 library(DT)
 library(ggplot2)
@@ -15,23 +10,148 @@ library(dplyr)
 library(mapproj)
 library(tidyr)
 library(rcdimple)
+library(shinydashboard)
 
+
+#GDP - quarterly: namq_10_gdp
+#Unemployment quarterly: une_rt_q
+#Labour productivity and unit labour costs: namq_10_lp_ulc
+#
+
+
+
+#Todo's
+#Map - unemployment, gdp, whateva
+# How do we catch up to the west?
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
   output$tabEuroStat <- renderDataTable({ query_table <- search_eurostat(input$query, type = "table") })
-  output$tabUnemployment<-renderDataTable({unemployment <- spread(get_eurostat('tepsr_wc170', time_format = "num"), geo, values)})
+  #Table with information on unemployment
+
+  #KPI - economic indicators on the Introduction page
+  #Population value box
+  output$populationbox <- renderValueBox({
+    population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2))))
+    popyear <- as.character(max(population$time))
+    population <- paste0(round((population[population[, "time"]==popyear, ]$values/1000000),2), "mln")
+    valueBox(
+      population, paste0("Population in: ", popyear), icon = icon("group"),
+      color = "purple"
+    )
+  })
   
-  output$logo <- renderImage({
-    # When input$n is 1, filename is ./images/image1.jpeg
-    logo <- normalizePath(file.path('./',
-                                        paste('logo-eurostat', input$n, '.jpg', sep='')))
+  
+  #GDP value box
+  output$gdpbox <- renderValueBox({
+    gdp <- label_eurostat(get_eurostat("nama_aux_gph",  filters = list(geo = str_sub(input$country,-3,-2), unit="EUR_HAB", indic_na="RGDPH")))
+    gdpyear <- as.character(max(gdp$time))
+    gdp <- round(gdp[gdp[, "time"]==as.character(max(gdp$time)), ]$values,2)
+    valueBox(
+      gdp, paste0("GDP in :", gdpyear), icon = icon("money"),
+      color = "purple"
+    )
+  })
+  
+  #Unemployment
+  output$unemploymentbox <- renderValueBox({
+    unemployment <- label_eurostat(get_eurostat("tipsun20",  filters = list(geo = str_sub(input$country,-3,-2), age="TOTAL", sex="T")))
+    unempyear <- as.character(max(unemployment$time))
+    unemployment <- unemployment[unemployment[, "time"]==as.character(max(unemployment$time)), ]$values
+    valueBox(
+      unemployment, paste0("Unemployment rate in: ", unempyear), icon = icon("cogs"),
+      color = "purple"
+    )
+  })
+  
+  #Inflation
+  output$inflationbox <- renderValueBox({
+    inflation <- label_eurostat(get_eurostat("tec00118",  filters = list(geo = str_sub(input$country,-3,-2))))
+    inflatyear <- as.character(max(inflation$time))
+    inflation <-inflation[inflation[, "time"]==as.character(max(inflation$time)), ]$values
+    valueBox(
+      inflation, paste0("Inflation rate in: ", inflatyear), icon = icon("euro"),
+      color = "purple"
+    )
+  })
+  
+  
+  #Government debt
+  output$govdebtbox <- renderValueBox({
     
-    # Return a list containing the filename
-    list(src = filename)
-  }, deleteFile = FALSE)
+    debt <- get_eurostat("gov_10dd_edpt1", filters=list(geo= str_sub(input$country,-3,-2),unit="PC_GDP", sector="S13", na_item="GD"))
+    debtyear <- as.character(max(debt$time))
+    debt <- debt[debt[, "time"]==as.character(max(debt$time)), ]$values
+  
+    valueBox(
+      debt, paste0("Government debt in: ", debtyear), icon = icon("euro"),
+      color = "purple"
+    )
+  })
   
   
+  #Government deficit
+  output$govdeficitbox <- renderValueBox({
+    
+    deficit <- get_eurostat("gov_10dd_edpt1", filters=list(geo= str_sub(input$country,-3,-2),unit="PC_GDP", sector="S13", na_item="B9"))
+    deficityear <- as.character(max(deficit$time))
+    deficit <- deficit[deficit[, "time"]==as.character(max(deficit$time)), ]$values
+    
+    valueBox(
+      deficit, paste0("Government deficit in: ", deficityear), icon = icon("warning"),
+      color = "purple"
+    )
+  })
+  
+  #Economic Sentiment
+  output$sentimentbox <- renderValueBox({
+    sentiment <- get_eurostat("teibs010", filters=list(geo= str_sub(input$country,-3,-2)))
+    sentiyear <- as.character(max(sentiment$time))
+    sentiment <- sentiment[sentiment[, "time"]==as.character(max(sentiment$time)), ]$values
+    valueBox(
+      sentiment, paste0("Economic sentiment indicator in: ", sentiyear), icon = icon("bar-chart"),
+      color = "purple"
+    )
+  })
+  
+  #Labour costs
+  output$labourcostbox <- renderValueBox({
+    
+    labour_costs <- get_eurostat("tps00173", filters = list(geo=str_sub(input$country,-3,-2), lcstruct="D"))
+    labour_year <-  as.character(max(labour_costs$time))
+    labour_costs <- labour_costs[labour_costs[, "time"]==as.character(max(labour_costs$time)), ]$values
+    
+    valueBox(
+      labour_costs, paste0("Labour costs in: ", labour_year),  icon = icon("compass"),
+      color = "purple"
+    )
+  })
+  
+  #Imigration
+  output$imigrationbox <- renderValueBox({
+    
+    immigration <- get_eurostat("tps00176", filters = list(geo=str_sub(input$country,-3,-2), agedef="COMPLET"))
+    immigrationyr <- as.character(max(immigration$time))
+    immigration <- immigration[immigration[, "time"]==as.character(max(immigration$time)), ]$values
+    
+    valueBox(
+      immigration, paste0("Imigration in: ", immigrationyr),  icon = icon("line-chart"),
+      color = "purple"
+    )
+  })
+  
+  
+  #Flagi
+  
+  output$flag <- renderImage({
+    return(list(src = "flags/Bosnia.svg.png",
+      contentType = "image/png", deleteFile = FALSE
+    ))
+  })
+
+  
+  #Fancy animated chart
+  #Animated demography chart
   output$chart <- renderDimple({demography <- get_eurostat('demo_pjangroup', time_format = "num")
   
   germany <- demography[ which(demography$geo=='DE' 
@@ -47,10 +167,7 @@ shinyServer(function(input, output) {
   germany <- select(germany, -unit)
   germany <- select(germany, -geo)
   germany <- select(germany, -age)
-  
-  
   germany <- germany %>% mutate(values = ifelse(sex == 'M', values*(-1), values*1))
-  
   
   # Format the table with dplyr and tidyr
   
@@ -60,8 +177,6 @@ shinyServer(function(input, output) {
   html <- paste0("<h3 style='font-family:Helvetica; text-align: center;'>", 'Population Dynamics', min(germany$time), "
                  -", max(germany$time, "</h3>"))
   
-  result = 1+1
-
 # Build the chart with rcdimple
 
 chart <-germany %>%
