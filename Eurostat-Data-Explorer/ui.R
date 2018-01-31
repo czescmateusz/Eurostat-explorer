@@ -20,6 +20,7 @@ library(shinyjs)
 library(rcdimple)
 library(shinydashboard)
 library(eurostat)
+
 #Eu countries and their codes in eurostat database
 countries <-  eu_countries
 countries$codename <- paste0(countries$name, " (", countries$code, ")")
@@ -35,8 +36,8 @@ dbSidebar <- dashboardSidebar(
   # DEFINE SIDEBAR ITEMS
   sidebarMenu(
     menuItem("Introduction", tabName = "introduction", icon = icon("home")),
-    menuItem("Demography", tabName = "demography", icon = icon("area-chart")),
-    #menuItem("Data", tabName = "data", icon = icon("table")),
+    menuItem("KPI", tabName = "KPI", icon = icon("area-chart")),
+    menuItem("Demography", tabName = "demotab", icon = icon("table")),
     #menuItem("RDF Tree", tabName = "tree", icon = icon("tree")),
     #menuItem("Reports", tabName = "reports", icon = icon("cogs")),
     menuItem("Source Code", icon = icon("code"), href = "https://github.com/czescmateusz/Eurostat-explorer")
@@ -48,11 +49,10 @@ dbSidebar <- dashboardSidebar(
 ############################################################################################
 introTab <- tabItem(
   tabName = "introduction",
-  h1("Eurostat Data Explorer"),
+  h1("Economic overview of Europe"),
   fluidRow(
     tags$em(
-      "STATEMENT: 
-      ...."
+      "STATEMENT: this app was prepared before "
     ),
     br(),br(),
     box(
@@ -78,20 +78,24 @@ introTab <- tabItem(
   )
 )
 ############################################################################################
-# DEFINE DASHBOARD BODY GRAPHS TAB
+# DEFINE KPI'S and DEFINITIONS
 ############################################################################################
-demoTab <- tabItem(
-  tabName = "demography",
-  valueBoxOutput("populationbox"), valueBoxOutput('gdpbox'),valueBoxOutput('unemploymentbox'),
+kpiTab <- tabItem(
+  tabName = "KPI",
+  tags$div(title="Population - definition goes here", valueBoxOutput("populationbox")), valueBoxOutput('gdpbox'),valueBoxOutput('unemploymentbox'),
   valueBoxOutput('inflationbox'), valueBoxOutput('govdebtbox'), valueBoxOutput('govdeficitbox'),
   valueBoxOutput('sentimentbox'), valueBoxOutput('labourcostbox'), valueBoxOutput('imigrationbox'),
-  selectInput("country", "Choose a country:", countries$codename), 
-  imageOutput("flag", width = "50%", height = "200px"), dimpleOutput('chart'))
+  selectInput("country", "Choose a country:", countries$codename),
+  imageOutput("flag", width = "50%", height = "200px"))
 
 ############################################################################################
-# DEFINE INEQUALITY TAB
+# DEFINE Demography Tab
 ############################################################################################
-#inequalityTab <- tabItem()
+demoTab <- tabItem(
+  tabName="demotab",
+  h1("Demography - text goes here"),
+  dimpleOutput('chart')
+)
 
 
 ############################################################################################
@@ -107,6 +111,7 @@ userInterface <- dashboardPage(
   dashboardBody(
     tabItems(
       introTab,
+      kpiTab,
       demoTab
     )
   )

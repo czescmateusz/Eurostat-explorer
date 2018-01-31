@@ -1,5 +1,4 @@
-#
-# This is the server logic of a Shiny web application. You can run the 
+# This is the server logic of a Shiny web application.
 
 
 library(shiny)
@@ -14,6 +13,17 @@ library(rcdimple)
 library(shinydashboard)
 
 
+#GDP - quarterly: namq_10_gdp
+#Unemployment quarterly: une_rt_q
+#Labour productivity and unit labour costs: namq_10_lp_ulc
+#
+
+
+
+#Todo's
+#Map - unemployment, gdp, whateva
+# How do we catch up to the west?
+
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
   output$tabEuroStat <- renderDataTable({ query_table <- search_eurostat(input$query, type = "table") })
@@ -24,7 +34,7 @@ shinyServer(function(input, output) {
   output$populationbox <- renderValueBox({
     population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2))))
     popyear <- as.character(max(population$time))
-    population <- paste0((population[population[, "time"]==popyear, ]$values/1000000), "mln")
+    population <- paste0(round((population[population[, "time"]==popyear, ]$values/1000000),2), "mln")
     valueBox(
       population, paste0("Population in: ", popyear), icon = icon("group"),
       color = "purple"
@@ -36,7 +46,7 @@ shinyServer(function(input, output) {
   output$gdpbox <- renderValueBox({
     gdp <- label_eurostat(get_eurostat("nama_aux_gph",  filters = list(geo = str_sub(input$country,-3,-2), unit="EUR_HAB", indic_na="RGDPH")))
     gdpyear <- as.character(max(gdp$time))
-    gdp <-gdp[gdp[, "time"]==as.character(max(gdp$time)), ]$values
+    gdp <- round(gdp[gdp[, "time"]==as.character(max(gdp$time)), ]$values,2)
     valueBox(
       gdp, paste0("GDP in :", gdpyear), icon = icon("money"),
       color = "purple"
@@ -93,7 +103,7 @@ shinyServer(function(input, output) {
     )
   })
   
-  #Sentiment
+  #Economic Sentiment
   output$sentimentbox <- renderValueBox({
     sentiment <- get_eurostat("teibs010", filters=list(geo= str_sub(input$country,-3,-2)))
     sentiyear <- as.character(max(sentiment$time))
@@ -141,7 +151,7 @@ shinyServer(function(input, output) {
 
   
   #Fancy animated chart
-  #Wykres dynamiczny z piramidą populacji  
+  #Animated demography chart
   output$chart <- renderDimple({demography <- get_eurostat('demo_pjangroup', time_format = "num")
   
   germany <- demography[ which(demography$geo=='DE' 
