@@ -9,29 +9,27 @@ library(ggplot2)
 library(dplyr)
 library(mapproj)
 library(tidyr)
-library(rcdimple)
 library(shinydashboard)
-
-
-#GDP - quarterly: namq_10_gdp
-#Unemployment quarterly: une_rt_q
-#Labour productivity and unit labour costs: namq_10_lp_ulc
-#
-
-
+library(dygraphs)
+library(xts)
+library(forecast)
+library(knitr)
 
 #Todo's
 #Map - unemployment, gdp, whateva
 # How do we catch up to the west?
+# 
+
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-  output$tabEuroStat <- renderDataTable({ query_table <- search_eurostat(input$query, type = "table") })
+  #output$tabEuroStat <- renderDataTable({ query_table <- search_eurostat(input$query, type = "table") })
   #Table with information on unemployment
 
   #KPI - economic indicators on the Introduction page
   #Population value box
   output$populationbox <- renderValueBox({
+    Sys.sleep(0.5)
     population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2))))
     popyear <- as.character(max(population$time))
     population <- paste0(round((population[population[, "time"]==popyear, ]$values/1000000),2), "mln")
@@ -44,7 +42,10 @@ shinyServer(function(input, output) {
   
   #GDP value box
   output$gdpbox <- renderValueBox({
-    gdp <- label_eurostat(get_eurostat("nama_aux_gph",  filters = list(geo = str_sub(input$country,-3,-2), unit="EUR_HAB", indic_na="RGDPH")))
+    #nama_aux_gph
+    Sys.sleep(0.5)
+    gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country,-3,-2), na_item="B1GQ", unit="CP_MEUR",  s_adj="SCA"))
+    gdp <- na.trim(gdp)
     gdpyear <- as.character(max(gdp$time))
     gdp <- round(gdp[gdp[, "time"]==as.character(max(gdp$time)), ]$values,2)
     valueBox(
@@ -55,9 +56,10 @@ shinyServer(function(input, output) {
   
   #Unemployment
   output$unemploymentbox <- renderValueBox({
+    Sys.sleep(0.5)
     unemployment <- label_eurostat(get_eurostat("tipsun20",  filters = list(geo = str_sub(input$country,-3,-2), age="TOTAL", sex="T")))
     unempyear <- as.character(max(unemployment$time))
-    unemployment <- unemployment[unemployment[, "time"]==as.character(max(unemployment$time)), ]$values
+    unemployment <- paste0(unemployment[unemployment[, "time"]==as.character(max(unemployment$time)), ]$values, "%")
     valueBox(
       unemployment, paste0("Unemployment rate in: ", unempyear), icon = icon("cogs"),
       color = "purple"
@@ -66,11 +68,12 @@ shinyServer(function(input, output) {
   
   #Inflation
   output$inflationbox <- renderValueBox({
+    Sys.sleep(0.5)
     inflation <- label_eurostat(get_eurostat("tec00118",  filters = list(geo = str_sub(input$country,-3,-2))))
     inflatyear <- as.character(max(inflation$time))
-    inflation <-inflation[inflation[, "time"]==as.character(max(inflation$time)), ]$values
+    inflation <- paste0(inflation[inflation[, "time"]==as.character(max(inflation$time)), ]$values, "%")
     valueBox(
-      inflation, paste0("Inflation rate in: ", inflatyear), icon = icon("euro"),
+      inflation, paste0("Inflation rate in: ", inflatyear), icon = icon("calculator"),
       color = "purple"
     )
   })
@@ -78,10 +81,10 @@ shinyServer(function(input, output) {
   
   #Government debt
   output$govdebtbox <- renderValueBox({
-    
+    Sys.sleep(0.5)
     debt <- get_eurostat("gov_10dd_edpt1", filters=list(geo= str_sub(input$country,-3,-2),unit="PC_GDP", sector="S13", na_item="GD"))
     debtyear <- as.character(max(debt$time))
-    debt <- debt[debt[, "time"]==as.character(max(debt$time)), ]$values
+    debt <- paste0(debt[debt[, "time"]==as.character(max(debt$time)), ]$values, "%")
   
     valueBox(
       debt, paste0("Government debt in: ", debtyear), icon = icon("euro"),
@@ -92,10 +95,10 @@ shinyServer(function(input, output) {
   
   #Government deficit
   output$govdeficitbox <- renderValueBox({
-    
+    Sys.sleep(0.5)
     deficit <- get_eurostat("gov_10dd_edpt1", filters=list(geo= str_sub(input$country,-3,-2),unit="PC_GDP", sector="S13", na_item="B9"))
     deficityear <- as.character(max(deficit$time))
-    deficit <- deficit[deficit[, "time"]==as.character(max(deficit$time)), ]$values
+    deficit <- paste0(deficit[deficit[, "time"]==as.character(max(deficit$time)), ]$values, "%")
     
     valueBox(
       deficit, paste0("Government deficit in: ", deficityear), icon = icon("warning"),
@@ -105,6 +108,7 @@ shinyServer(function(input, output) {
   
   #Economic Sentiment
   output$sentimentbox <- renderValueBox({
+    Sys.sleep(0.5)
     sentiment <- get_eurostat("teibs010", filters=list(geo= str_sub(input$country,-3,-2)))
     sentiyear <- as.character(max(sentiment$time))
     sentiment <- sentiment[sentiment[, "time"]==as.character(max(sentiment$time)), ]$values
@@ -116,7 +120,7 @@ shinyServer(function(input, output) {
   
   #Labour costs
   output$labourcostbox <- renderValueBox({
-    
+    Sys.sleep(0.5)
     labour_costs <- get_eurostat("tps00173", filters = list(geo=str_sub(input$country,-3,-2), lcstruct="D"))
     labour_year <-  as.character(max(labour_costs$time))
     labour_costs <- labour_costs[labour_costs[, "time"]==as.character(max(labour_costs$time)), ]$values
@@ -129,7 +133,7 @@ shinyServer(function(input, output) {
   
   #Imigration
   output$imigrationbox <- renderValueBox({
-    
+    Sys.sleep(0.5)
     immigration <- get_eurostat("tps00176", filters = list(geo=str_sub(input$country,-3,-2), agedef="COMPLET"))
     immigrationyr <- as.character(max(immigration$time))
     immigration <- immigration[immigration[, "time"]==as.character(max(immigration$time)), ]$values
@@ -142,70 +146,236 @@ shinyServer(function(input, output) {
   
   
   #Flagi
+
   
-  output$flag <- renderImage({
-    return(list(src = "flags/Bosnia.svg.png",
-      contentType = "image/png", deleteFile = FALSE
-    ))
+  output$flag <- renderText({
+    paste0('<table>
+             <tbody>
+             <tr>
+             <td>
+             <p>This page presents a set of economic indicators that summarize the economic situation in European countries.&nbsp;</p>
+             <p>&nbsp;</p>
+             <p>Please hover over the indicator to get a definition.&nbsp;</p>
+             </td>
+             <td><img src="http://ec.europa.eu/eurostat/guip/web/countries/', 
+           tolower(str_sub(input$country,-3,-2)), '.gif" height="50%" /></td>
+    </tr>
+           </tbody>
+           </table>')
+  })
+  
+  #Dygraphy
+  
+  output$dygraph <- renderDygraph({
+    
+    gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country2,-3,-2), na_item="B1GQ", unit="CP_MEUR", s_adj="SCA"))
+    
+    gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+    colnames(gdpTSeries) <- "GDP"
+    gdptimeseries <- na.trim(gdpTSeries)
+    
+    #Splitting time series
+    gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-input$periods)
+    colnames(gdp.learn) <- "GDP-learn"
+    gdp.test  <-  last(gdptimeseries, input$periods)
+    colnames(gdp.test) <- "GDP-test"
+    #Autoarima
+    autoarima.model <- auto.arima(gdp.learn)
+    autoARfore <- forecast(autoarima.model, h=input$periods)
+    autoardf <- summary(autoARfore)
+    dates <- rownames(as.data.frame(gdp.test))
+    autoardf <- cbind(autoardf, dates)
+    #convert into a Time-Series class
+    autoardfTsPoint <- xts(autoardf$`Point Forecast`, as.Date(autoardf$dates))
+    colnames(autoardfTsPoint) <- "Point Forecast"
+    autoardfTsLo80 <- xts(autoardf$`Lo 80`, as.Date(autoardf$dates))
+    colnames(autoardfTsLo80) <- "Lo 80"
+    autoardfTsHi95 <- xts(autoardf$`Hi 95`, as.Date(autoardf$dates))
+    colnames(autoardfTsHi95) <- "Hi 95"
+    
+    forplot <- cbind (gdp.learn, gdp.test, autoardfTsPoint, autoardfTsLo80, autoardfTsHi95)
+    
+ 
+    #plots
+    dygraph(forplot, main="Auto Arima Forecast") %>%
+      dyOptions(axisLineWidth = 1.5, fillGraph = TRUE, drawGrid = TRUE)
+    
+  })
+  
+
+  output$table1 <- renderTable({
+    
+    gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country2,-3,-2), na_item="B1GQ", unit="CP_MEUR", s_adj="SCA"))
+    
+    gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+    colnames(gdpTSeries) <- "GDP"
+    gdptimeseries <- na.trim(gdpTSeries)
+    
+    #Splitting time series
+    gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-input$periods)
+    colnames(gdp.learn) <- "GDP-learn"
+    gdp.test  <-  last(gdptimeseries, input$periods)
+    colnames(gdp.test) <- "GDP-test"
+    #Autoarima
+    autoarima.model <- auto.arima(gdp.learn)
+    autoARfore <- forecast(autoarima.model, h=input$periods)
+    table1 <- data.frame(Item=c('In Sample Error', 'Out Sample Error'),accuracy(autoARfore, gdp.test))
+
+  })
+  
+
+  output$dygraph2 <- renderDygraph({
+    gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country2,-3,-2), na_item="B1GQ", unit="CP_MEUR", s_adj="SCA"))
+    
+    gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+    colnames(gdpTSeries) <- "GDP"
+    gdptimeseries <- na.trim(gdpTSeries)
+    
+    #Splitting time series
+    gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-input$periods)
+    colnames(gdp.learn) <- "GDP-learn"
+    gdp.test  <-  last(gdptimeseries, input$periods)
+    colnames(gdp.test) <- "GDP-test"
+    
+  #Ets
+  ets.model <- ets(gdp.learn)
+  etsfore <- forecast(ets.model, input$periods)
+  etsdf <- summary(etsfore)
+  dates <- rownames(as.data.frame(gdp.test))
+  etsdf <- cbind(etsdf, dates)
+  #convert into a Time-Series class
+  etsdfTsPoint <- xts(etsdf$`Point Forecast`, as.Date(etsdf$dates))
+  colnames(etsdfTsPoint) <- "Point Forecast"
+  etsdfTsLo80 <- xts(etsdf$`Lo 80`, as.Date(etsdf$dates))
+  colnames(etsdfTsLo80) <- "Lo 80"
+  etsdfTsHi95 <- xts(etsdf$`Hi 95`, as.Date(etsdf$dates))
+  colnames(etsdfTsHi95) <- "Hi 95"
+  
+  forplotEts <- cbind(gdp.learn, gdp.test, etsdfTsPoint, etsdfTsLo80, etsdfTsHi95)
+  
+  dygraph(forplotEts,  main="ETS model") %>%
+    dyOptions(axisLineWidth = 1.5, fillGraph = TRUE, drawGrid = TRUE)
+  })
+  
+  output$table2 <- renderTable({
+    
+    gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country2,-3,-2), na_item="B1GQ", unit="CP_MEUR", s_adj="SCA"))
+    
+    gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+    colnames(gdpTSeries) <- "GDP"
+    gdptimeseries <- na.trim(gdpTSeries)
+    
+    #Splitting time series
+    gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-input$periods)
+    colnames(gdp.learn) <- "GDP-learn"
+    gdp.test  <-  last(gdptimeseries, input$periods)
+    colnames(gdp.test) <- "GDP-test"
+    #Ets
+    ets.model <- ets(gdp.learn)
+    etsfore <- forecast(ets.model, input$periods)
+    table2 <- data.frame(Item=c('In Sample Error', 'Out Sample Error'),accuracy(etsfore, gdp.test))
+    
+  })
+  
+  output$dygraph3 <- renderDygraph({
+    gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country2,-3,-2), na_item="B1GQ", unit="CP_MEUR", s_adj="SCA"))
+    
+    gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+    colnames(gdpTSeries) <- "GDP"
+    gdptimeseries <- na.trim(gdpTSeries)
+    
+    #Splitting time series
+    gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-input$periods)
+    colnames(gdp.learn) <- "GDP-learn"
+    gdp.test  <-  last(gdptimeseries, input$periods)
+    colnames(gdp.test) <- "GDP-test"
+    
+    #Snaive model
+    snaive.forecast <- snaive(gdp.learn, input$periods)
+    snainvedf <- summary(snaive.forecast)
+    dates <- rownames(as.data.frame(gdp.test))
+    snainvedf  <- cbind(snainvedf , dates)
+    #convert into a Time-Series class
+    snainveTsPoint <- xts(snainvedf$`Point Forecast`, as.Date(snainvedf$dates))
+    colnames(snainveTsPoint) <- "Point Forecast"
+    snainvedfTsLo80 <- xts(snainvedf$`Lo 80`, as.Date(snainvedf$dates))
+    colnames(snainvedfTsLo80) <- "Lo 80"
+    snainvedfTsHi95 <- xts(snainvedf$`Hi 95`, as.Date(snainvedf$dates))
+    colnames(snainvedfTsHi95) <- "Hi 95"
+    
+    forplotSnaive <- cbind(gdp.learn, gdp.test, snainveTsPoint, snainvedfTsLo80, snainvedfTsHi95)
+    
+    dygraph(forplotSnaive,  main="forplotSnaive") %>%
+      dyOptions(axisLineWidth = 1.5, fillGraph = TRUE, drawGrid = TRUE)
   })
 
+  output$table3 <- renderTable({
+    
+    gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country2,-3,-2), na_item="B1GQ", unit="CP_MEUR", s_adj="SCA"))
+    
+    gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+    colnames(gdpTSeries) <- "GDP"
+    gdptimeseries <- na.trim(gdpTSeries)
+    
+    #Splitting time series
+    gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-input$periods)
+    colnames(gdp.learn) <- "GDP-learn"
+    gdp.test  <-  last(gdptimeseries, input$periods)
+    colnames(gdp.test) <- "GDP-test"
+    #Snaive
+    snaive.forecast <- snaive(gdp.learn, input$periods)
+    table3 <- data.frame(Item=c('In Sample Error', 'Out Sample Error'),accuracy(snaive.forecast, gdp.test))
+    
+  })  
   
-  #Fancy animated chart
-  #Animated demography chart
-  output$chart <- renderDimple({demography <- get_eurostat('demo_pjangroup', time_format = "num")
-  
-  germany <- demography[ which(demography$geo=='DE' 
-                               & demography$sex!='T' & demography$age!='TOTAL' & demography$age!='UNK'
-                               & demography$age!='Y_GE75' & demography$age!='Y_GE80' 
-                               & demography$age!='Y_GE85' & demography$age!='Y_LT5'), ]
-  
-  germany$ageCode <- as.character(gsub("Y", "", as.character(germany$age)))
-  
-  germany$agestring <- as.numeric(gsub("-", "", as.character(germany$ageCode)))
-  germany <- germany[order(germany$time, germany$agestring),]
-  
-  germany <- select(germany, -unit)
-  germany <- select(germany, -geo)
-  germany <- select(germany, -age)
-  germany <- germany %>% mutate(values = ifelse(sex == 'M', values*(-1), values*1))
-  
-  # Format the table with dplyr and tidyr
-  
-  max_x <- plyr::round_any(max(germany$values), 10000, f = ceiling)
-  min_x <- plyr::round_any(min(germany$values), 10000, f = floor)
-  
-  html <- paste0("<h3 style='font-family:Helvetica; text-align: center;'>", 'Population Dynamics', min(germany$time), "
-                 -", max(germany$time, "</h3>"))
-  
-# Build the chart with rcdimple
+  output$dygraph4 <- renderDygraph({
+    gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country2,-3,-2), na_item="B1GQ", unit="CP_MEUR", s_adj="SCA"))
+    
+    gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+    colnames(gdpTSeries) <- "GDP"
+    gdptimeseries <- na.trim(gdpTSeries)
+    
+    #Splitting time series
+    gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-input$periods)
+    colnames(gdp.learn) <- "GDP-learn"
+    gdp.test  <-  last(gdptimeseries, input$periods)
+    colnames(gdp.test) <- "GDP-test"
+    
+    #nnetar model
+    nnetarmodel <- nnetar(gdp.learn, repeats = 300, lambda=0.8, scale.inputs = T)
+    forNnetar <- forecast(nnetarmodel, h=input$periods)
+    forNnetardf <- summary(forNnetar)
+    dates <- rownames(as.data.frame(gdp.test))
+    forNnetardf  <- cbind(forNnetardf, dates)
+    #convert into a Time-Series class
+    forNnetarTsPoint <- xts(forNnetardf$`Point Forecast`, as.Date(forNnetardf$dates))
+    colnames(forNnetarTsPoint) <- "Point Forecast"
+    
+    forplotNnetar <- cbind(gdp.learn, gdp.test, forNnetarTsPoint)
+    
+    dygraph(forplotNnetar,  main="NNetar forecast") %>%
+      dyOptions(axisLineWidth = 1.5, fillGraph = TRUE, drawGrid = TRUE)
+  })  
 
-chart <-germany %>%
-  dimple(x = "values", y = "ageCode", group = "sex", type = 'bar', storyboard = "time") %>%
-  yAxis(type = "addCategoryAxis", orderRule = "agestring") %>%
-  xAxis(type = "addMeasureAxis", overrideMax = max_x, overrideMin = min_x) %>%
-  default_colors(c("green", "orange")) %>%
-  add_legend() %>%
-  add_title(html = html) %>%
+  output$table4 <- renderTable({
+    
+    gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country2,-3,-2), na_item="B1GQ", unit="CP_MEUR", s_adj="SCA"))
+    
+    gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+    colnames(gdpTSeries) <- "GDP"
+    gdptimeseries <- na.trim(gdpTSeries)
+    
+    #Splitting time series
+    gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-input$periods)
+    colnames(gdp.learn) <- "GDP-learn"
+    gdp.test  <-  last(gdptimeseries, input$periods)
+    colnames(gdp.test) <- "GDP-test"
+    #Snaive
+    nnetarmodel <- nnar(gdp.learn, repeats = 300, lambda=0.8, scale.inputs = T)
+    forNnetar <- forecast(nnetarmodel, h=input$periods)
+    table4 <- data.frame(Item=c('In Sample Error', 'Out Sample Error'),accuracy(forNnetar, gdp.test))
+    
+  })  
   
-  # Here, I'll pass in some JS code to make all the values on the X-axis and in the tooltip absolute values
-  tack(., options = list(
-    chart = htmlwidgets::JS("
-                            function(){
-                            var self = this;
-                            // x axis should be first or [0] but filter to make sure
-                            self.axes.filter(function(ax){
-                            return ax.position == 'x'
-                            })[0] // now we have our x axis set _getFormat as before
-                            ._getFormat = function () {
-                            return function(d) {
-                            return d3.format(',.0f')(Math.abs(d) / 1000000) + 'm';
-                            };
-                            };
-                            // return self to return our chart
-                            return self;
-                            }
-                            "))
-    )
-})
 })
 
