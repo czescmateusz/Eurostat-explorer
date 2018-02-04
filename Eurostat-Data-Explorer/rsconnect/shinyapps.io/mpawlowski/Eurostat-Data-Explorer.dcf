@@ -1,10 +1,12 @@
 name: Eurostat-Data-Explorer
 title: Eurostat-Data-Explorer
+username:
 account: mpawlowski
 server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
 appId: 205856
-bundleId: 1182944
+bundleId: 1204400
 url: https://mpawlowski.shinyapps.io/Eurostat-Data-Explorer/
-when: 1516356448.50969
+when: 1517572848.04541
 asMultiple: FALSE
 asStatic: FALSE

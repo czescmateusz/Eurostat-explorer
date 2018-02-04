@@ -11,21 +11,13 @@ output: html_document
 library(eurostat)
 library(forecast)
 
-#GDP forecasting
+gdptimeseries <- na.trim(gdpTSeries)
 
-gdp <- get_eurostat("namq_10_gdp", filters = list(geo="UK", na_item="B1GQ", unit="CP_MEUR", s_adj="NSA"))
-
-gdptimeseries <- ts(gdp$values, frequency=4, start=c(1975,4))
-gdp.learn <- window(gdptimeseries, end = c(2010,1))
-gdp.test <- window(gdptimeseries, start = c(2010,2))
+gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-8)
+gdp.test  <-  last(gdptimeseries, 8)
 #autoarima
 gdp.autoarima <- auto.arima(gdp.learn)
 summary(gdp.autoarima)
-#decomposition
-gdp.tslm <- tslm(gdp.learn ~ trend + season)
-summary(gdp.tslm)
-Acf(residuals(gdp.tslm))
-Box.test(residuals(gdp.tslm), type="Ljung-Box", lag=20)
 #exponential smoothing model
 model.ets <- ets (gdp.learn)
 summary(model.ets)
@@ -35,30 +27,320 @@ horyzont <- length(gdp.test)
 snaive.forecast <- snaive (gdp.learn, h=horyzont)
 # auto arima forecast
 arima1.forecast <- forecast(gdp.autoarima, h=horyzont)
-
-# tslm forecast
-tslm.forecast <- forecast(gdp.tslm, h=horyzont)
-
-# ets forecast
-
+#ets forecast
 ets.forecast <- forecast(model.ets, h=horyzont)
-
 #wykresy
 par(mfrow = c (2,2))
 plot(snaive.forecast)
 lines(gdp.test, col="red", lty=2)
-
 legend("topleft", legend=c("real", "forecast"), lty=c(2,1), col=c("red", "blue"))
 grid()
 plot(arima1.forecast)
 lines(gdp.test, col="red", lty=2)
 grid()
-plot(tslm.forecast)
-lines(gdp.test, col="red", lty=2)
-grid()
 plot(ets.forecast)
 lines(gdp.test, col="red", lty=2)
 grid()
+```
 
+
+
+```{r}
+
+
+
+dygraph(time.series)
+
+dygraph(time.series) %>%
+  dySeries("Low.technology.manufacturing", axis = 'y2') %>%
+  dySeries("Unemployment", axis = 'y2') %>%
+  dySeries("High.technology.manufacturing", axis = 'y2') %>%
+  dySeries("Medium.high.technology.manufacturing", axis = 'y2') %>%
+  dySeries("Medium.Low.technology.manufacturing", axis = 'y2') %>%
+  dySeries("Labour.productivity", axis = 'y2') %>%
+  dyOptions(axisLineWidth = 1.5, fillGraph = TRUE, drawGrid = FALSE) %>%
+  dyRangeSelector()
+```
+
+```{r}
+library(forecast)
+library(eurostat)
+library(caret)
+library(lubridate)
+
+gdp <- get_eurostat("namq_10_gdp", filters = list(geo="UK", na_item="B1GQ", unit="CP_MEUR", s_adj="SCA"))
+
+indu.prod <- get_eurostat("sts_inpr_q")
+	
+indu.prod.highTech <- indu.prod %>% 
+  filter(geo == "UK" & nace_r2=="C_HTC" & s_adj=="SCA" & unit=="PCH_PRE")
+
+indu.prod.medHighTech <- indu.prod %>% 
+  filter(geo == "UK" & nace_r2=="C_HTC_M" & s_adj=="SCA" & unit=="PCH_PRE")
+
+indu.prod.lowTech <- indu.prod %>% 
+  filter(geo == "UK" & nace_r2=="C_HTC" & s_adj=="SCA" & unit=="PCH_PRE")
+
+indu.prod.medLowTech <- indu.prod %>% 
+  filter(geo == "UK" & nace_r2=="C_LTC_M" & s_adj=="SCA" & unit=="PCH_PRE")
+
+
+#Labour productivity and unit labour costs: namq_10_lp_ulc
+labour.prod <- get_eurostat("namq_10_lp_ulc", filters = list(geo="UK", unit="PCH_SM", na_item="RLPR_PER"))
+
+#Unemployment quarterly: une_rt_q
+
+
+unemployment <- get_eurostat("une_rt_q")
+unemployment <- unemployment %>% 
+  filter(geo == "UK" & age=="TOTAL" & sex=="T" & s_adj=="SA" & unit=="PC_ACT")
+
+gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+colnames(gdpTSeries) <- "GDP"
+
+highTechTSeries <- xts(indu.prod.highTech$values, as.Date(indu.prod.highTech$time, format='%Y/%m/%d'))
+colnames(highTechTSeries) <- "High-technology manufacturing"
+
+medHighTechTSeries <- xts(indu.prod.medHighTech$values, as.Date(indu.prod.medHighTech$time, format='%Y/%m/%d'))
+colnames(medHighTechTSeries) <- "Medium high-technology manufacturing"
+
+lowTechTSeries <- xts(indu.prod.lowTech$values, as.Date(indu.prod.lowTech$time, format='%Y/%m/%d'))
+colnames(lowTechTSeries) <- "Low-technology manufacturing"
+
+medLowTechTSeries <- xts(indu.prod.medLowTech$values, as.Date(indu.prod.medLowTech$time, format='%Y/%m/%d'))
+colnames(medLowTechTSeries) <- "Medium Low-technology manufacturing"
+
+unemployTSeries <- xts(unemployment$values, as.Date(unemployment$time, format='%Y/%m/%d'))
+colnames(unemployTSeries) <- "Unemployment"
+
+
+labour.prodTseries <- xts(labour.prod$values, as.Date(labour.prod$time, format='%Y/%m/%d'))
+colnames(labour.prodTseries) <- "Labour productivity"
+
+time.series <- cbind(gdpTSeries, highTechTSeries, medHighTechTSeries, medLowTechTSeries, lowTechTSeries, unemployTSeries, labour.prodTseries)
+
+gdptimeseries <- na.trim(gdpTSeries)
+
+#Splitting time series
+gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-8)
+colnames(gdp.learn) <- "GDP-learn"
+gdp.test  <-  last(gdptimeseries, 8)
+colnames(gdp.test) <- "GDP-test"
+#Autoarima
+autoarima.model <- auto.arima(gdp.learn)
+autoARfore <- forecast(autoarima.model, h=length(gdp.test))
+autoardf <- summary(autoARfore)
+dates <- rownames(as.data.frame(gdp.test))
+autoardf <- cbind(autoardf, dates)
+#convert into a Time-Series class
+autoardfTsPoint <- xts(autoardf$`Point Forecast`, as.Date(autoardf$dates))
+colnames(autoardfTsPoint) <- "Point Forecast"
+autoardfTsLo80 <- xts(autoardf$`Lo 80`, as.Date(autoardf$dates))
+colnames(autoardfTsLo80) <- "Lo 80"
+autoardfTsHi95 <- xts(autoardf$`Hi 95`, as.Date(autoardf$dates))
+colnames(autoardfTsHi95) <- "Hi 95"
+
+#Ets
+ets.model <- ets(gdp.learn)
+etsfore <- forecast(ets.model, h=length(gdp.test))
+etsdf <- summary(etsfore)
+dates <- rownames(as.data.frame(gdp.test))
+etsdf <- cbind(etsdf, dates)
+#convert into a Time-Series class
+etsdfTsPoint <- xts(etsdf$`Point Forecast`, as.Date(etsdf$dates))
+colnames(etsdfTsPoint) <- "Point Forecast"
+etsdfTsLo80 <- xts(etsdf$`Lo 80`, as.Date(etsdf$dates))
+colnames(etsdfTsLo80) <- "Lo 80"
+etsdfTsHi95 <- xts(etsdf$`Hi 95`, as.Date(etsdf$dates))
+colnames(etsdfTsHi95) <- "Hi 95"
+
+#Snaive model
+snaive.forecast <- snaive(gdp.learn, h=8)
+snainvedf <- summary(snaive.forecast)
+dates <- rownames(as.data.frame(gdp.test))
+snainvedf  <- cbind(snainvedf , dates)
+#convert into a Time-Series class
+snainveTsPoint <- xts(snainvedf$`Point Forecast`, as.Date(snainvedf$dates))
+colnames(snainveTsPoint) <- "Point Forecast"
+snainvedfTsLo80 <- xts(snainvedf$`Lo 80`, as.Date(snainvedf$dates))
+colnames(snainvedfTsLo80) <- "Lo 80"
+snainvedfTsHi95 <- xts(snainvedf$`Hi 95`, as.Date(snainvedf$dates))
+colnames(snainvedfTsHi95) <- "Hi 95"
+
+forplotSnaive <- cbind(gdp.learn, gdp.test, snainveTsPoint, snainvedfTsLo80, snainvedfTsHi95)
+
+#nnetar model
+nnetarmodel <- nnetar(gdp.learn)
+forNnetar <- forecast(nnetarmodel, h=length(gdp.test))
+forNnetardf <- summary(forNnetar)
+dates <- rownames(as.data.frame(gdp.test))
+forNnetardf  <- cbind(forNnetardf, dates)
+#convert into a Time-Series class
+forNnetarTsPoint <- xts(forNnetardf$`Point Forecast`, as.Date(forNnetardf$dates))
+colnames(forNnetarTsPoint) <- "Point Forecast"
+
+forplotNnetar <- cbind(gdp.learn, gdp.test, forNnetarTsPoint)
+
+
+```
+
+
+
+
+
+```{r}
+
+#DYGRAPH NA PODSTAWIE DWOCH SZEREGOW
+
+#NNETAR
+
+#ARIMA
+
+
+
+
+
+```
+
+```{r}
+    #Industrial production - for later use
+    indu.prod.highTech <- indu.prod %>% 
+      filter(geo == str_sub(input$country2,-3,-2) & nace_r2=="C_HTC" & s_adj=="SCA" & unit=="PCH_PRE")
+    
+    indu.prod.medHighTech <- indu.prod %>% 
+      filter(geo == str_sub(input$country2,-3,-2) & nace_r2=="C_HTC_M" & s_adj=="SCA" & unit=="PCH_PRE")
+
+    indu.prod.lowTech <- indu.prod %>% 
+      filter(geo == str_sub(input$country2,-3,-2) & nace_r2=="C_HTC" & s_adj=="SCA" & unit=="PCH_PRE")
+    
+    indu.prod.medLowTech <- indu.prod %>% 
+      filter(geo == str_sub(input$country2,-3,-2) & nace_r2=="C_LTC_M" & s_adj=="SCA" & unit=="PCH_PRE")
+    
+    #Labour productivity and unit labour costs: namq_10_lp_ulc
+    labour.prod <- get_eurostat("namq_10_lp_ulc", filters = list(geo=str_sub(input$country2,-3,-2), unit="PCH_SM", na_item="RLPR_PER"))
+    
+    #Unemployment quarterly: une_rt_q
+    
+    unemployment <- unemployment %>% 
+      filter(geo == str_sub(input$country2,-3,-2) & age=="TOTAL" & sex=="T" & s_adj=="SA" & unit=="PC_ACT")
+    
+    gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+    colnames(gdpTSeries) <- "GDP"
+    
+    highTechTSeries <- xts(indu.prod.highTech$values, as.Date(indu.prod.highTech$time, format='%Y/%m/%d'))
+    colnames(highTechTSeries) <- "High-technology manufacturing"
+    
+    medHighTechTSeries <- xts(indu.prod.medHighTech$values, as.Date(indu.prod.medHighTech$time, format='%Y/%m/%d'))
+    colnames(medHighTechTSeries) <- "Medium high-technology manufacturing"
+    
+    lowTechTSeries <- xts(indu.prod.lowTech$values, as.Date(indu.prod.lowTech$time, format='%Y/%m/%d'))
+    colnames(lowTechTSeries) <- "Low-technology manufacturing"
+    
+    medLowTechTSeries <- xts(indu.prod.medLowTech$values, as.Date(indu.prod.medLowTech$time, format='%Y/%m/%d'))
+    colnames(medLowTechTSeries) <- "Medium Low-technology manufacturing"
+    
+    unemployTSeries <- xts(unemployment$values, as.Date(unemployment$time, format='%Y/%m/%d'))
+    colnames(unemployTSeries) <- "Unemployment"
+    
+    labour.prodTseries <- xts(labour.prod$values, as.Date(labour.prod$time, format='%Y/%m/%d'))
+    colnames(labour.prodTseries) <- "Labour productivity"
+```
+
+
+```{r}
+  #Animated demography chart
+  output$chart <- renderDimple({demography <- get_eurostat('demo_pjangroup', time_format = "num")
+  
+  germany <- demography[ which(demography$geo=='DE' 
+                               & demography$sex!='T' & demography$age!='TOTAL' & demography$age!='UNK'
+                               & demography$age!='Y_GE75' & demography$age!='Y_GE80' 
+                               & demography$age!='Y_GE85' & demography$age!='Y_LT5'), ]
+  
+  germany$ageCode <- as.character(gsub("Y", "", as.character(germany$age)))
+  
+  germany$agestring <- as.numeric(gsub("-", "", as.character(germany$ageCode)))
+  germany <- germany[order(germany$time, germany$agestring),]
+  
+  germany <- select(germany, -unit)
+  germany <- select(germany, -geo)
+  germany <- select(germany, -age)
+  germany <- germany %>% mutate(values = ifelse(sex == 'M', values*(-1), values*1))
+  
+  # Format the table with dplyr and tidyr
+  
+  max_x <- plyr::round_any(max(germany$values), 10000, f = ceiling)
+  min_x <- plyr::round_any(min(germany$values), 10000, f = floor)
+  
+  html <- paste0("<h3 style='font-family:Helvetica; text-align: center;'>", 'Population Dynamics', min(germany$time), "
+                 -", max(germany$time, "</h3>"))
+  
+# Build the chart with rcdimple
+
+chart <-germany %>%
+  dimple(x = "values", y = "ageCode", group = "sex", type = 'bar', storyboard = "time") %>%
+  yAxis(type = "addCategoryAxis", orderRule = "agestring") %>%
+  xAxis(type = "addMeasureAxis", overrideMax = max_x, overrideMin = min_x) %>%
+  default_colors(c("green", "orange")) %>%
+  add_legend() %>%
+  add_title(html = html) %>%
+  
+  # Here, I'll pass in some JS code to make all the values on the X-axis and in the tooltip absolute values
+  tack(., options = list(
+    chart = htmlwidgets::JS("
+                            function(){
+                            var self = this;
+                            // x axis should be first or [0] but filter to make sure
+                            self.axes.filter(function(ax){
+                            return ax.position == 'x'
+                            })[0] // now we have our x axis set _getFormat as before
+                            ._getFormat = function () {
+                            return function(d) {
+                            return d3.format(',.0f')(Math.abs(d) / 1000000) + 'm';
+                            };
+                            };
+                            // return self to return our chart
+                            return self;
+                            }
+                            "))
+    )
+})
+```
+
+
+```{r}
+dygraph(forplot, group="forecastgdp", main="Auto Arima Forecast") %>%
+  dyOptions(axisLineWidth = 1.5, fillGraph = TRUE, drawGrid = TRUE)
+    
+dygraph(forplotEts, group="forecastgdp", main="ETS model") %>%
+  dyOptions(axisLineWidth = 1.5, fillGraph = TRUE, drawGrid = TRUE)
+```
+
+
+```{r}
+library(knitr)
+gdp <- get_eurostat("namq_10_gdp", filters = list(geo="UK", na_item="B1GQ", unit="CP_MEUR",  s_adj="SCA"))
+    
+    gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
+    colnames(gdpTSeries) <- "GDP"
+    gdptimeseries <- na.trim(gdpTSeries)
+    
+    #Splitting time series
+    gdp.learn <-  first(gdptimeseries, length(gdptimeseries)-8)
+    colnames(gdp.learn) <- "GDP-learn"
+    gdp.test  <-  last(gdptimeseries, 8)
+    colnames(gdp.test) <- "GDP-test"
+    #Autoarima
+    autoarima.model <- auto.arima(gdp.learn)
+    autoARfore <- forecast(autoarima.model, h=length(gdp.test))
+    t = kable(accuracy(autoARfore, gdp.test))
+
+```
+
+
+```{r}
+gdp <- get_eurostat("namq_10_gdp", filters = list(geo="UK", na_item="B1GQ", unit="CP_MEUR",  s_adj="SCA"))
+gdp <- na.trim(gdp)
+gdpyear <- as.character(max(gdp$time))
+gdp <- round(gdp[gdp[, "time"]==as.character(max(gdp$time)), ]$values,2)
 ```
 
