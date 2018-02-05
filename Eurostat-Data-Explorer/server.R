@@ -371,7 +371,7 @@ shinyServer(function(input, output) {
     gdp.test  <-  last(gdptimeseries, input$periods)
     colnames(gdp.test) <- "GDP-test"
     #Snaive
-    nnetarmodel <- nnar(gdp.learn, repeats = 300, lambda=0.8, scale.inputs = T)
+    nnetarmodel <- nnetar(gdp.learn, repeats = 300, lambda=0.8, scale.inputs = T)
     forNnetar <- forecast(nnetarmodel, h=input$periods)
     table4 <- data.frame(Item=c('In Sample Error', 'Out Sample Error'),accuracy(forNnetar, gdp.test))
     
