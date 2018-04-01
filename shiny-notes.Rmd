@@ -5,6 +5,86 @@ date: "19 wrze≈õnia 2017"
 output: html_document
 ---
 
+#Map
+
+```{r}
+install.packages('geojsonio')
+library(dplyr)
+library(eurostat)
+library(tmap)
+# Load example data set
+data("tgs00026")
+# Can be retrieved from the eurostat service with:
+tgs00026 <- get_eurostat("tgs00026", time_format = "raw")
+# Data from Eurostat
+sp_data <- tgs00026 %>%
+# subset to have only a single row per geo
+dplyr::filter(time == 2010, nchar(as.character(geo)) == 4) %>%
+# categorise
+dplyr::mutate(income = cut_to_classes(values, n = 5)) %>%
+# merge with geodata
+merge_eurostat_geodata(data = ., geocolumn = "geo",resolution = "60",
+output_class = "spdf", all_regions = TRUE)
+
+data(Europe)
+
+
+map1 <- tmap::tm_shape(Europe) +
+tmap::tm_fill("lightgrey") +
+tmap::tm_shape(sp_data) +
+tmap::tm_grid() +
+tmap::tm_polygons("income", title = "Disposable household\nincomes in 2010",
+palette = "Oranges") +
+tmap::tm_format_Europe()
+
+tmap_mode("view")
+
+map1
+
+
+#gdp <- get_eurostat("namq_10_gdp", filters = list(geo="SK", na_item="B1GQ", unit="CP_MEUR",  s_adj="SCA"))
+
+```
+
+
+```{r}
+library(eurostat)
+library(dplyr)
+library(ggplot2)
+library(RColorBrewer)
+
+# Downloading and manipulating the tabular data 
+euro_sf2 <- tgs00026 %>% 
+  # subsetting to year 2014 and NUTS-3 level
+  dplyr::filter(time == 2014, nchar(as.character(geo)) == 4, grepl("PL",geo)) %>% 
+  # label the single geo column
+  mutate(label = paste0(label_eurostat(.)[["geo"]], "\n", values, "Ä"),
+         income = cut_to_classes(values)) %>% 
+  # merge with geodata
+  dplyr::inner_join(gisco, ., by = c("NUTS_ID" = "geo")) %>% 
+  # use a proper coordinate reference syste (CRS):
+  # epsg projection 3035 - etrs89 / etrs-laea
+  sf::st_transform("+init=epsg:3035") 
+
+
+# plot map
+map2 <- tm_shape(Europe) +
+  tm_fill("lightgrey") +
+  tm_shape(euro_sf2, is.master = TRUE) +
+  tm_polygons("income", title = "Disposable household incomes in 2014",
+              palette = "Oranges", border.col = "white") + 
+  tm_text("label", just = "center") + 
+  tm_scale_bar() +
+  tm_format_Europe(legend.outside = TRUE, attr.outside = TRUE)
+map2
+```
+
+
+#Your own infographics
+
+https://www.santoshsrinivas.com/creating-waffle-charts-in-r-for-infographics/
+https://www.r-bloggers.com/r-how-to-layout-and-design-an-infographic/
+
 #Forecasting functions
 
 ```{r}
@@ -187,20 +267,6 @@ forplotNnetar <- cbind(gdp.learn, gdp.test, forNnetarTsPoint)
 
 
 
-
-```{r}
-
-#DYGRAPH NA PODSTAWIE DWOCH SZEREGOW
-
-#NNETAR
-
-#ARIMA
-
-
-
-
-
-```
 
 ```{r}
     #Industrial production - for later use

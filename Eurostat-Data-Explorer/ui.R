@@ -18,7 +18,9 @@ library(rcdimple)
 library(shinydashboard)
 library(eurostat)
 library(dygraphs)
-
+library(leaflet)
+library(geojsonio)
+library(Matrix)
 #Eu countries and their codes in eurostat database
 countries <-  eu_countries
 countries$codename <- paste0(countries$name, " (", countries$code, ")")
@@ -36,7 +38,9 @@ dbSidebar <- dashboardSidebar(
     menuItem("Introduction", tabName = "introduction", icon = icon("home")),
     menuItem("KPI", tabName = "KPI", icon = icon("area-chart")),
     menuItem("Time series models", tabName = "timeseriesTab", icon = icon("cogs")),
+    menuItem("Map Charts", tabName = "mapTab", icon = icon("globe")),
     menuItem("Source Code", icon = icon("code"), href = "https://github.com/czescmateusz/Eurostat-explorer")
+    
   )
 )
 
@@ -130,6 +134,15 @@ RMSE: Root Mean Squared Error
            ACF1: Autocorrelation of errors at lag 1.
            ",tableOutput("table4")))
 
+############################################################################################
+# DEFINE KPI'S and DEFINITIONS
+############################################################################################
+MapTab <- tabItem(
+  tabName = "mapTab", 
+  h1("Map Charts"),
+  leafletOutput("map")
+)
+
 
 ############################################################################################
 # POPULATE DASHBOARD
@@ -145,7 +158,8 @@ userInterface <- dashboardPage(
     tabItems(
       introTab,
       kpiTab,
-      timeseriesTab
+      timeseriesTab,
+      MapTab
     )
   )
 )

@@ -14,7 +14,9 @@ library(dygraphs)
 library(xts)
 library(forecast)
 library(knitr)
-
+library(tmap)
+library(geojsonio)
+library(Matrix)
 #Todo's
 #Map - unemployment, gdp, whateva
 # How do we catch up to the west?
@@ -30,8 +32,8 @@ shinyServer(function(input, output) {
   #Population value box
   output$populationbox <- renderValueBox({
     Sys.sleep(0.5)
-    population <- label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2))))
-    popyear <- as.character(max(population$time))
+    population <-  tryCatch(label_eurostat(get_eurostat("tps00001",  filters = list(geo = str_sub(input$country,-3,-2)))), error=function(e) print("Sorry, there is no data for the selection made"))
+    popyear <- as.character(max(population[ which(!is.na(population$values)),]$time))
     population <- paste0(round((population[population[, "time"]==popyear, ]$values/1000000),2), "mln")
     valueBox(
       population, paste0("Population in: ", popyear), icon = icon("group"),
@@ -40,14 +42,15 @@ shinyServer(function(input, output) {
   })
   
   
+population <- label_eurostat(get_eurostat("tps00001"))
+  
   #GDP value box
   output$gdpbox <- renderValueBox({
     #nama_aux_gph
     Sys.sleep(0.5)
-    gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country,-3,-2), na_item="B1GQ", unit="CP_MEUR",  s_adj="SCA"))
-    gdp <- na.trim(gdp)
-    gdpyear <- as.character(max(gdp$time))
-    gdp <- round(gdp[gdp[, "time"]==as.character(max(gdp$time)), ]$values,2)
+    gdp <- tryCatch(get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country,-3,-2), na_item="B1GQ", unit="CP_MEUR",  s_adj="SCA")), error=function(e) print("Sorry, there is no data for the selection made"))
+    gdpyear <- tryCatch(as.character(max(gdp[ which(!is.na(gdp$values)),]$time)), error=function(e) print("Sorry, there is no data for the selection made"))
+    gdp <- tryCatch(round(gdp[gdp[, "time"]==as.character(max(gdp$time)), ]$values,2),  error=function(e) print("No data"))
     valueBox(
       gdp, paste0("GDP in :", gdpyear), icon = icon("money"),
       color = "purple"
@@ -58,7 +61,7 @@ shinyServer(function(input, output) {
   output$unemploymentbox <- renderValueBox({
     Sys.sleep(0.5)
     unemployment <- label_eurostat(get_eurostat("tipsun20",  filters = list(geo = str_sub(input$country,-3,-2), age="TOTAL", sex="T")))
-    unempyear <- as.character(max(unemployment$time))
+    unempyear <- as.character(max(unemployment[ which(!is.na(unemployment$values)),]$time))
     unemployment <- paste0(unemployment[unemployment[, "time"]==as.character(max(unemployment$time)), ]$values, "%")
     valueBox(
       unemployment, paste0("Unemployment rate in: ", unempyear), icon = icon("cogs"),
@@ -70,7 +73,7 @@ shinyServer(function(input, output) {
   output$inflationbox <- renderValueBox({
     Sys.sleep(0.5)
     inflation <- label_eurostat(get_eurostat("tec00118",  filters = list(geo = str_sub(input$country,-3,-2))))
-    inflatyear <- as.character(max(inflation$time))
+    inflatyear <- as.character(max(inflation[ which(!is.na(inflation$values)),]$time))
     inflation <- paste0(inflation[inflation[, "time"]==as.character(max(inflation$time)), ]$values, "%")
     valueBox(
       inflation, paste0("Inflation rate in: ", inflatyear), icon = icon("calculator"),
@@ -83,7 +86,7 @@ shinyServer(function(input, output) {
   output$govdebtbox <- renderValueBox({
     Sys.sleep(0.5)
     debt <- get_eurostat("gov_10dd_edpt1", filters=list(geo= str_sub(input$country,-3,-2),unit="PC_GDP", sector="S13", na_item="GD"))
-    debtyear <- as.character(max(debt$time))
+    debtyear <- as.character(max(debt[ which(!is.na(debt$values)),]$time))
     debt <- paste0(debt[debt[, "time"]==as.character(max(debt$time)), ]$values, "%")
   
     valueBox(
@@ -97,7 +100,7 @@ shinyServer(function(input, output) {
   output$govdeficitbox <- renderValueBox({
     Sys.sleep(0.5)
     deficit <- get_eurostat("gov_10dd_edpt1", filters=list(geo= str_sub(input$country,-3,-2),unit="PC_GDP", sector="S13", na_item="B9"))
-    deficityear <- as.character(max(deficit$time))
+    deficityear <- as.character(max(deficit[ which(!is.na(deficit$values)),]$time))
     deficit <- paste0(deficit[deficit[, "time"]==as.character(max(deficit$time)), ]$values, "%")
     
     valueBox(
@@ -110,7 +113,7 @@ shinyServer(function(input, output) {
   output$sentimentbox <- renderValueBox({
     Sys.sleep(0.5)
     sentiment <- get_eurostat("teibs010", filters=list(geo= str_sub(input$country,-3,-2)))
-    sentiyear <- as.character(max(sentiment$time))
+    sentiyear <- as.character(max(sentiment[ which(!is.na(sentiment$values)),]$time))
     sentiment <- sentiment[sentiment[, "time"]==as.character(max(sentiment$time)), ]$values
     valueBox(
       sentiment, paste0("Economic sentiment indicator in: ", sentiyear), icon = icon("bar-chart"),
@@ -122,7 +125,7 @@ shinyServer(function(input, output) {
   output$labourcostbox <- renderValueBox({
     Sys.sleep(0.5)
     labour_costs <- get_eurostat("tps00173", filters = list(geo=str_sub(input$country,-3,-2), lcstruct="D"))
-    labour_year <-  as.character(max(labour_costs$time))
+    labour_year <-  as.character(max(labour_costs[ which(!is.na(labour_costs$values)),]$time))
     labour_costs <- labour_costs[labour_costs[, "time"]==as.character(max(labour_costs$time)), ]$values
     
     valueBox(
@@ -131,17 +134,45 @@ shinyServer(function(input, output) {
     )
   })
   
-  #Imigration
+  #Immigration
   output$imigrationbox <- renderValueBox({
     Sys.sleep(0.5)
     immigration <- get_eurostat("tps00176", filters = list(geo=str_sub(input$country,-3,-2), agedef="COMPLET"))
-    immigrationyr <- as.character(max(immigration$time))
+    immigrationyr <- as.character(max(immigration[ which(!is.na(immigration$values)),]$time))
     immigration <- immigration[immigration[, "time"]==as.character(max(immigration$time)), ]$values
     
     valueBox(
-      immigration, paste0("Imigration in: ", immigrationyr),  icon = icon("line-chart"),
+      immigration, paste0("Immigration in: ", immigrationyr),  icon = icon("line-chart"),
       color = "purple"
     )
+  })
+  
+  #Map
+  output$map <- renderLeaflet({
+  # Can be retrieved from the eurostat service with:
+  tgs00026 <- get_eurostat("tgs00026", time_format = "raw")
+  # Data from Eurostat
+  sp_data <- tgs00026 %>%
+    # subset to have only a single row per geo
+    dplyr::filter(time == 2010, nchar(as.character(geo)) == 4) %>%
+    # categorise
+    dplyr::mutate(income = cut_to_classes(values, n = 5)) %>%
+    # merge with geodata
+    merge_eurostat_geodata(data = ., geocolumn = "geo",resolution = "60",
+                           output_class = "spdf", all_regions = TRUE)
+  
+  data(Europe)
+  
+  map1 <- tmap::tm_shape(Europe) +
+    tmap::tm_fill("lightgrey") +
+    tmap::tm_shape(sp_data) +
+    tmap::tm_grid() +
+    tmap::tm_polygons("income", title = "Disposable household\nincomes in 2010",
+                      palette = "Oranges") +
+    tmap::tm_format_Europe()
+  
+  tmap_leaflet(map1)
+
   })
   
   
@@ -310,9 +341,7 @@ shinyServer(function(input, output) {
   })
 
   output$table3 <- renderTable({
-    
     gdp <- get_eurostat("namq_10_gdp", filters = list(geo=str_sub(input$country2,-3,-2), na_item="B1GQ", unit="CP_MEUR", s_adj="SCA"))
-    
     gdpTSeries <- xts(gdp$values, as.Date(gdp$time, format='%Y/%m/%d'))
     colnames(gdpTSeries) <- "GDP"
     gdptimeseries <- na.trim(gdpTSeries)
