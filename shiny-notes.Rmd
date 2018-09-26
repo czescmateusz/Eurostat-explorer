@@ -8,7 +8,7 @@ output: html_document
 #Map
 
 ```{r}
-install.packages('geojsonio')
+install.packages('Matrix')
 library(dplyr)
 library(eurostat)
 library(tmap)
@@ -408,5 +408,20 @@ gdp <- get_eurostat("namq_10_gdp", filters = list(geo="UK", na_item="B1GQ", unit
 gdp <- na.trim(gdp)
 gdpyear <- as.character(max(gdp$time))
 gdp <- round(gdp[gdp[, "time"]==as.character(max(gdp$time)), ]$values,2)
+```
+
+
+```{r}
+    labour_costs <- na.omit(get_eurostat("tps00173", lcstruct="D1_D4_MD5"))
+                                         
+                                         , filters = list(geo=str_sub(input$country,-3,-2), lcstruct="D")))
+    labour_year <-  as.character(max(labour_costs[ which(!is.na(labour_costs$values)),]$time))
+    labour_costs <- labour_costs[labour_costs[, "time"]==as.character(max(labour_costs$time)), ]$values
+    
+    valueBox(
+      labour_costs, paste0("Labour costs in: ", labour_year),  icon = icon("compass"),
+      color = "purple"
+    )
+  })
 ```
 

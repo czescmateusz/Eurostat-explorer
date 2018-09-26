@@ -139,7 +139,7 @@ RMSE: Root Mean Squared Error
 ############################################################################################
 MapTab <- tabItem(
   tabName = "mapTab", 
-  h1("Map Charts"),
+  h1("Map Charts - under development"),
   leafletOutput("map")
 )
 

@@ -123,8 +123,8 @@ population <- label_eurostat(get_eurostat("tps00001"))
   
   #Labour costs
   output$labourcostbox <- renderValueBox({
-    Sys.sleep(0.5)
-    labour_costs <- get_eurostat("tps00173", filters = list(geo=str_sub(input$country,-3,-2), lcstruct="D"))
+    Sys.sleep(0.8)
+    labour_costs <- na.omit(get_eurostat("tps00173", filters = list(geo=str_sub(input$country,-3,-2), lcstruct="D1_D4_MD5")))
     labour_year <-  as.character(max(labour_costs[ which(!is.na(labour_costs$values)),]$time))
     labour_costs <- labour_costs[labour_costs[, "time"]==as.character(max(labour_costs$time)), ]$values
     
@@ -212,7 +212,7 @@ population <- label_eurostat(get_eurostat("tps00001"))
     colnames(gdp.test) <- "GDP-test"
     #Autoarima
     autoarima.model <- auto.arima(gdp.learn)
-    autoARfore <- forecast(autoarima.model, h=input$periods)
+    autoARfore <- forecast(autoarima.model, h= input$periods )
     autoardf <- summary(autoARfore)
     dates <- rownames(as.data.frame(gdp.test))
     autoardf <- cbind(autoardf, dates)
