@@ -5,8 +5,8 @@ account: mpawlowski
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 271842
-bundleId: 1296881
+bundleId: 1644368
 url: https://mpawlowski.shinyapps.io/Economic-overview-Europe/
-when: 1522605874.63787
+when: 1539632224.10451
 asMultiple: FALSE
 asStatic: FALSE

@@ -19,11 +19,21 @@ library(shinydashboard)
 library(eurostat)
 library(dygraphs)
 library(leaflet)
-library(geojsonio)
+library(RSQLite)
+library(DBI)
+library(shinyjs)
+
+
 library(Matrix)
 #Eu countries and their codes in eurostat database
-countries <-  eu_countries
-countries$codename <- paste0(countries$name, " (", countries$code, ")")
+
+library(RSQLite)
+library(DBI)
+#Creating a local sqlite db
+eurostatDB <- dbConnect(SQLite(), paste0(getwd(), "/sqlite/eurostat.sqlite", user="shiny"))
+countries <- dbGetQuery(eurostatDB, "select * from countries")
+
+#dbGetQuery(eurostatDB, "SELECT name FROM sqlite_master WHERE type = 'table'")
 
 #Dashboard header
 dbHeader <- dashboardHeader(
@@ -75,7 +85,7 @@ introTab <- tabItem(
 ############################################################################################
 kpiTab <- tabItem(
   tabName = "KPI",
-  selectInput("country", "Choose a country:", countries$codename),
+  selectInput("country", "Choose a country:", countries$name),
   htmlOutput("flag", align="middle"),
   tags$div(title="The number of persons having their usual residence in a country on 1 January of the respective year. When usually resident population is not available, countries may report legal or registered residents.", valueBoxOutput("populationbox")), 
   tags$div(title="Seasonally adjusted GDP in market prices (millions euro)", valueBoxOutput('gdpbox')),

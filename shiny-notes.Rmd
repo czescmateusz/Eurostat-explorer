@@ -5,6 +5,8 @@ date: "19 września 2017"
 output: html_document
 ---
 
+#LSTM
+
 #Map
 
 ```{r}
